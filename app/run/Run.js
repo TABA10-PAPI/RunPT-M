@@ -4,16 +4,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import BottomNavigationBar from "../../components/BottomNavigationBar";
 
-export default function Home() {
+export default function Run() {
   const navigation = useNavigation();
   const route = useRoute();
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.title}>홈 화면</Text>
+        <Text style={styles.title}>러닝 화면</Text>
         <Text style={styles.subtitle}>
-          러닝 데이터를 연동해 맞춤 피드백을 표시할 영역입니다.
+          러닝 관련 기능을 표시할 영역입니다.
         </Text>
       </View>
       <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
@@ -43,3 +43,4 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 });
+

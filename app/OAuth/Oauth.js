@@ -1,20 +1,12 @@
 const KAKAO_API_KEY =
-  process.env.EXPO_PUBLIC_KAKAO_API_KEY ??
-  process.env.REACT_APP_KAKAO_API_KEY ??
-  "";
+  process.env.EXPO_PUBLIC_KAKAO_API_KEY;
 const KAKAO_REDIRECT_URI =
-  process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI ??
-  process.env.REACT_APP_KAKAO_REDIRECT_URI ??
-  "";
+  process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI;
 
 const CLIENT_ID_NAVER =
-  process.env.EXPO_PUBLIC_NAVER_API_KEY ??
-  process.env.REACT_APP_NAVER_API_KEY ??
-  "";
+  process.env.EXPO_PUBLIC_NAVER_API_KEY;
 const REDIRECT_URI_NAVER =
-  process.env.EXPO_PUBLIC_NAVER_REDIRECT_URI ??
-  process.env.REACT_APP_NAVER_REDIRECT_URI ??
-  "";
+  process.env.EXPO_PUBLIC_NAVER_REDIRECT_URI;
 const STATE = "RANDOM_STRING";
 
 export const KAKAO_AUTH_URL =

@@ -1,21 +1,19 @@
 import * as WebBrowser from "expo-web-browser";
-import React from "react";
 import {
   Alert,
   Image,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   globalStyles,
   palette,
   typography,
 } from "../../styles/globalStyles";
 import { KAKAO_AUTH_URL, NAVER_AUTH_URL } from "../OAuth/Oauth.js";
-
 const logo = require("../../assets/logo.png");
 const kakaoImage = require("../../assets/kakao_phone.png");
 const naverImage = require("../../assets/naver_phone.png");

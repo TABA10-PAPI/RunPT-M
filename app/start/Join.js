@@ -1,20 +1,19 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   globalStyles,
   palette,
   typography,
 } from "../../styles/globalStyles";
-
 export default function Join() {
   const [nickname, setNickname] = useState("");
   const [height, setHeight] = useState("");

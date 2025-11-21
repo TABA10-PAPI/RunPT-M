@@ -1,15 +1,15 @@
-import React, { useEffect } from "react";
-import {
-  SafeAreaView,
-  View,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  Alert,
-} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function KakaoCallback() {
   const navigation = useNavigation();

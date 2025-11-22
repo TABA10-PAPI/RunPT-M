@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipActive: {
-    backgroundColor: palette.yellow,
+    backgroundColor: palette.green,
   },
   chipText: {
     color: palette.white,

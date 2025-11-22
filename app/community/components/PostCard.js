@@ -1,18 +1,24 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-} from 'react-native';
-import { palette, typography } from '@styles/globalStyles';
+import React from "react";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { palette, typography } from "@styles/globalStyles";
 
-const iconThumb = require('@assets/thumbs_up.png');
-const iconComment = require('@assets/comments.png');
+const iconThumb = require("@assets/thumbs_up.png");
+const iconComment = require("@assets/comments.png");
 
 export default function PostCard({ post }) {
+  const navigation = useNavigation();
+
+  const handlePostPress = () => {
+    navigation.navigate("DetailPost", { post });
+  };
+
   return (
-    <View style={styles.postContainer}>
+    <TouchableOpacity
+      style={styles.postContainer}
+      onPress={handlePostPress}
+      activeOpacity={0.8}
+    >
       {/* 게시자 정보 헤더 */}
       <View style={styles.postHeader}>
         {/* TODO: 프로필 이미지 추가 필요 - assets/profile_placeholder.png 또는 실제 프로필 이미지 */}
@@ -27,7 +33,7 @@ export default function PostCard({ post }) {
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.nickname}>{post.name}</Text>
-            <Text style={styles.trophyIcon}>🏆</Text>  {/*티어 아이콘*/}
+            <Text style={styles.trophyIcon}>🏆</Text> {/*티어 아이콘*/}
           </View>
           <Text style={styles.location}>{post.location}</Text>
         </View>
@@ -61,7 +67,7 @@ export default function PostCard({ post }) {
 
         {/* 게시물 설명 */}
         <Text style={styles.description}>
-          {post.description || '원하는 코스 있으시면 맞추어 뛰고 싶습니다'}
+          {post.description || "원하는 코스 있으시면 맞추어 뛰고 싶습니다"}
         </Text>
 
         {/* 통계 정보 (거리, 시간, 페이스) */}
@@ -84,76 +90,83 @@ export default function PostCard({ post }) {
 
         {/* 좋아요 및 댓글 */}
         <View style={styles.bottomRow}>
-          <View style={styles.actionRow}>
-            <Image 
-              source={iconThumb} 
-              style={styles.iconSmall} 
+          <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
+            <Image
+              source={iconThumb}
+              style={styles.iconThumb}
               resizeMode="contain"
             />
             <Text style={styles.bottomText}>{post.likes}</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={[styles.actionRow, styles.commentRow]}>
-            <Image 
-              source={iconComment} 
-              style={styles.iconSmall} 
+          <TouchableOpacity
+            style={[styles.actionRow, styles.commentRow]}
+            activeOpacity={0.7}
+            onPress={(e) => {
+              e.stopPropagation();
+              navigation.navigate("DetailPost", { post });
+            }}
+          >
+            <Image
+              source={iconComment}
+              style={styles.iconComment}
               resizeMode="contain"
             />
             <Text style={styles.bottomText}>{post.comments}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  postContainer: { 
-    marginBottom: 20 
+  postContainer: {
+    marginBottom: 20,
   },
 
   // 게시자 정보 헤더
-  postHeader: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 12 
+  postHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
   },
-  profileCircle: { 
-    width: 44, 
-    height: 44, 
+  profileCircle: {
+    width: 44,
+    height: 44,
     borderRadius: 22,
-    backgroundColor: '#555', // TODO: 이미지 추가 후 제거 또는 투명하게 변경
-    overflow: 'hidden', // 이미지가 원형으로 잘리도록
+    backgroundColor: "#555", // TODO: 이미지 추가 후 제거 또는 투명하게 변경
+    overflow: "hidden", // 이미지가 원형으로 잘리도록
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   userInfo: {
-    marginLeft: 12, 
-    flex: 1 
+    marginLeft: 12,
+    flex: 1,
   },
   nameRow: {
-    flexDirection: 'row', 
-    alignItems: 'center' 
+    flexDirection: "row",
+    alignItems: "center",
   },
-  nickname: { 
-    color: palette.white, 
+  nickname: {
+    color: palette.white,
     fontSize: 16,
-    fontWeight: '700',
-    ...typography.bold 
+    fontWeight: "700",
+    ...typography.bold,
   },
   trophyIcon: {
     fontSize: 16,
     marginLeft: 6,
   },
-  location: { 
-    color: '#999', 
-    fontSize: 12, 
-    marginTop: 4 
+  location: {
+    color: "#999",
+    fontSize: 12,
+    marginTop: 4,
   },
   locationTagContainer: {
-    marginLeft: 'auto',
+    marginLeft: "auto",
   },
   locationTag: {
     color: palette.white,
@@ -162,7 +175,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: palette.gray,
     borderRadius: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     ...typography.semibold,
   },
 
@@ -175,13 +188,13 @@ const styles = StyleSheet.create({
 
   // 장소 및 출발시간 정보
   infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 14,
   },
   infoItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     flex: 1,
   },
   infoIcon: {
@@ -192,20 +205,20 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   infoLabel: {
-    color: '#999',
+    color: "#999",
     fontSize: 12,
     marginBottom: 4,
   },
   infoValue: {
     color: palette.white,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     ...typography.semibold,
   },
 
   // 게시물 설명
   description: {
-    color: '#999',
+    color: "#999",
     fontSize: 13,
     lineHeight: 20,
     marginBottom: 16,
@@ -213,53 +226,57 @@ const styles = StyleSheet.create({
 
   // 통계 정보
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 16,
     paddingVertical: 12,
   },
   statBlock: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   statLabel: {
     color: palette.green,
     fontSize: 12,
     marginBottom: 6,
-    fontWeight: '600',
+    fontWeight: "600",
     ...typography.semibold,
   },
   statValue: {
     color: palette.white,
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     ...typography.bold,
   },
 
   // 좋아요 및 댓글
-  bottomRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center',
+  bottomRow: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: "#333",
   },
-  actionRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center' 
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   commentRow: {
     marginLeft: 16,
+    marginTop: 2,
   },
-  iconSmall: { 
-    width: 20, 
-    height: 20,
+  iconThumb: {
+    width: 17,
+    height: 19,
   },
-  bottomText: { 
-    color: palette.white, 
+  iconComment: {
+    width: 16,
+    height: 16,
+  },
+  bottomText: {
+    color: palette.white,
     fontSize: 13,
     marginLeft: 6,
-    fontWeight: '400',
+    fontWeight: "400",
   },
 });
-

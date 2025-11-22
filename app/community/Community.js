@@ -156,17 +156,19 @@ const styles = StyleSheet.create({
   },
 
   newPostButton: {
-    width: 40,
-    height: 40,
-    backgroundColor: palette.green,
+    width: 33,
+    height: 33,
+    backgroundColor: palette.black,
+    borderColor: "#303030",
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+
   },
   newPostIcon: {
-    width: 24,
-    height: 24,
-    tintColor: palette.black,
+    width: 14.79,
+    height: 14.79,
+    tintColor: palette.green,
   },
 
   searchRow: {

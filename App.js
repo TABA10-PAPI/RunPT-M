@@ -5,6 +5,7 @@ import Home from "@app/home/Home";
 import Run from "@app/run/Run";
 import Battery from "@app/battery/Battery";
 import Community from "@app/community/Community";
+import DetailPost from "@app/community/DetailPost";
 import Mypage from "@app/mypage/Mypage";
 import KakaoCallback from "@app/OAuth/KakaoCallback";
 import NaverCallback from "@app/OAuth/NaverCallback";
@@ -24,6 +25,7 @@ const linking = {
       Run: "run",
       Battery: "battery",
       Community: "community",
+      DetailPost: "community/:postId",
       Mypage: "mypage",
       KakaoCallback: "oauth/kakao",
       NaverCallback: "oauth/naver",
@@ -48,6 +50,7 @@ export default function App() {
           <Stack.Screen name="Run" component={Run} />
           <Stack.Screen name="Battery" component={Battery} />
           <Stack.Screen name="Community" component={Community} />
+          <Stack.Screen name="DetailPost" component={DetailPost} />
           <Stack.Screen name="Mypage" component={Mypage} />
           <Stack.Screen name="KakaoCallback" component={KakaoCallback} />
           <Stack.Screen name="NaverCallback" component={NaverCallback} />

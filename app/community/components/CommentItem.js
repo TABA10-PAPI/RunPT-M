@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#333",
+    backgroundColor: palette.grayDark,
     width: "100%",
   },
   commentItem: {
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#555",
+    backgroundColor: palette.grayMedium,
     overflow: "hidden",
     marginRight: 12,
   },
@@ -81,12 +81,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   commentTimestamp: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 12,
     marginLeft: "auto",
   },
   commentText: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 13,
     lineHeight: 18,
   },

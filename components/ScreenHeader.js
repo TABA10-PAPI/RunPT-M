@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { palette } from "@styles/globalStyles";
 
-export default function ScreenHeader({ title, subtitle, rightContent }) {
+export default function ScreenHeader({ title, subtitle, rightContent, leftContent }) {
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
@@ -10,6 +10,7 @@ export default function ScreenHeader({ title, subtitle, rightContent }) {
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       {rightContent ? <View style={styles.right}>{rightContent}</View> : null}
+      {leftContent ? <View style={styles.left}>{leftContent}</View> : null}
     </View>
   );
 }
@@ -40,6 +41,16 @@ const styles = StyleSheet.create({
   right: {
     position: "absolute",
     right: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+  },
+  left: {
+    position: "absolute",
+    left: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
   },
 });
 

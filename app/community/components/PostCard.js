@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { palette, typography } from "@styles/globalStyles";
 
-const iconThumb = require("@assets/thumbs_up.png");
-const iconComment = require("@assets/comments.png");
+const iconThumb = require("@assets/community/thumbs_up.png");
+const iconComment = require("@assets/community/comments.png");
 
 export default function PostCard({ 
   post, 
@@ -22,17 +22,16 @@ export default function PostCard({
   };
 
   const isDetailView = variant === "detail";
-  const ContainerComponent = disablePress ? View : TouchableOpacity;
+  const CardComponent = disablePress ? View : TouchableOpacity;
+  const cardProps = disablePress ? {} : { onPress: handlePostPress, activeOpacity: 0.8 };
 
   return (
-    <ContainerComponent
+    <View
       style={[
         styles.postContainer,
         isDetailView && styles.postContainerDetail,
         containerStyle,
       ]}
-      onPress={disablePress ? undefined : handlePostPress}
-      activeOpacity={disablePress ? 1 : 0.8}
     >
       {/* 게시자 정보 헤더 */}
       <View style={styles.postHeader}>
@@ -60,11 +59,14 @@ export default function PostCard({
       </View>
 
       {/* 게시물 카드 */}
-      <View style={[
-        styles.card,
-        isDetailView && styles.cardDetail,
-        cardStyle,
-      ]}>
+      <CardComponent
+        style={[
+          styles.card,
+          isDetailView && styles.cardDetail,
+          cardStyle,
+        ]}
+        {...cardProps}
+      >
         {/* 장소 및 출발시간 정보 */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
@@ -136,9 +138,14 @@ export default function PostCard({
             />
             <Text style={styles.bottomText}>{post.comments}</Text>
           </TouchableOpacity>
+          
+          {/* 작성 시간 (상세 페이지에서만 표시) */}
+          {isDetailView && post.timestamp && (
+            <Text style={styles.timestamp}>{post.timestamp}</Text>
+          )}
         </View>
-      </View>
-    </ContainerComponent>
+      </CardComponent>
+    </View>
   );
 }
 
@@ -160,7 +167,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#555", // TODO: 이미지 추가 후 제거 또는 투명하게 변경
+    backgroundColor: palette.grayMedium, // TODO: 이미지 추가 후 제거 또는 투명하게 변경
     overflow: "hidden", // 이미지가 원형으로 잘리도록
   },
   profileImage: {
@@ -186,7 +193,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   location: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 12,
     marginTop: 4,
   },
@@ -234,7 +241,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   infoLabel: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 12,
     marginBottom: 4,
   },
@@ -247,7 +254,7 @@ const styles = StyleSheet.create({
 
   // 게시물 설명
   description: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 13,
     lineHeight: 20,
     marginBottom: 16,
@@ -287,7 +294,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#333",
+    borderTopColor: palette.grayDark,
   },
   actionRow: {
     flexDirection: "row",
@@ -310,5 +317,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginLeft: 6,
     fontWeight: "400",
+  },
+  timestamp: {
+    color: palette.grayLight,
+    fontSize: 12,
+    marginLeft: "auto",
   },
 });

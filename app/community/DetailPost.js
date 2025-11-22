@@ -18,11 +18,11 @@ import BottomNavigationBar from "@components/BottomNavigationBar";
 import CommentItem from "./components/CommentItem";
 import PostCard from "./components/PostCard";
 
-const iconBack = require("@assets/arrow_left.png");
-const iconSend = require("@assets/sendbutton.png");
+const iconBack = require("@assets/community/arrow_left.png");
+const iconSend = require("@assets/community/sendbutton.png");
+const iconMenu = require("@assets/community/menu.png");
 // TODO: 이미지 추가 필요
 // const iconProfile = require('@assets/profile_placeholder.png'); // 프로필 사진
-
 
 // Mock data - 실제로는 route.params에서 받아와야 함
 const MOCK_POST = {
@@ -121,33 +121,37 @@ export default function DetailPost() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        behavior="height"
+        keyboardVerticalOffset={20}
       >
         <View style={styles.container}>
           {/* 헤더 */}
           <View style={styles.headerContainer}>
-            <View style={styles.header}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={handleBack}
-                activeOpacity={0.7}
-              >
-                <Image
-                  source={iconBack}
-                  style={styles.backIcon}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>Community</Text>
-              <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
-                <Image
-                  source={require('@assets/menu.png')}
-                  style={styles.menuIcon}
-                  resizeMode="contain"
-                />
-              </TouchableOpacity>
-            </View>
+            <ScreenHeader
+              title="Community"
+              leftContent={
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={handleBack}
+                  activeOpacity={0.7}
+                >
+                  <Image
+                    source={iconBack}
+                    style={styles.backIcon}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+              }
+              rightContent={
+                <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
+                  <Image
+                    source={iconMenu}
+                    style={styles.menuIcon}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+              }
+            />
           </View>
 
           <PostCard post={post} variant="detail" disablePress={true} />
@@ -178,7 +182,7 @@ export default function DetailPost() {
               </View>
               <TextInput
                 placeholder={`${post.name} 님에게 댓글`}
-                placeholderTextColor="#666"
+                placeholderTextColor={palette.grayPlaceholder}
                 style={styles.commentInput}
                 value={commentText}
                 onChangeText={setCommentText}
@@ -227,8 +231,6 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   backButton: {
-    position: "absolute",
-    left: 0,
     width: 40,
     height: 40,
     justifyContent: "center",
@@ -252,8 +254,6 @@ const styles = StyleSheet.create({
     ...typography.bold,
   },
   menuButton: {
-    position: "absolute",
-    right: 0,
     width: 40,
     height: 40,
     justifyContent: "center",
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#555",
+    backgroundColor: palette.grayMedium,
     overflow: "hidden",
   },
   profileImage: {
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   location: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 12,
     marginTop: 4,
   },
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   infoLabel: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 12,
     marginBottom: 4,
   },
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     ...typography.semibold,
   },
   description: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 13,
     lineHeight: 20,
     marginBottom: 16,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#333",
+    borderTopColor: palette.grayDark,
   },
   actionRow: {
     flexDirection: "row",
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   timestamp: {
-    color: "#999",
+    color: palette.grayLight,
     fontSize: 12,
     marginLeft: "auto",
   },
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingBottom: 100,
     borderTopWidth: 1,
-    borderTopColor: "#333",
+    borderTopColor: palette.grayDark,
   },
   commentInputBox: {
     flexDirection: "row",
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#555",
+    backgroundColor: palette.grayMedium,
     overflow: "hidden",
     marginRight: 12,
   },

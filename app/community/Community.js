@@ -15,11 +15,11 @@ import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import PostCard from "./components/PostCard";
 import FilterChip from "./components/FilterChip";
+import NewPostPopUp from "./components/NewPostPopUp";
 
-const iconNewPost = require("@assets/new_post.png");
-
+const iconNewPost = require("@assets/community/new_post.png");
+const iconSearch = require("@assets/community/search.png");
 // TODO: 이미지 추가 필요
-// const iconSearch = require('@assets/search_icon.png'); // 검색 아이콘
 // const iconProfile = require('@assets/profile_placeholder.png'); // 프로필 사진
 
 const MOCK_POSTS = [
@@ -83,8 +83,19 @@ export default function Community() {
 
   // 필터 선택 상태 관리
   const [selectedFilter, setSelectedFilter] = useState("수지구 죽전동");
+  const [isNewPostVisible, setIsNewPostVisible] = useState(false);
 
   const filterOptions = ["수지구 죽전동", "수지구 보정동"]; // 백엔드한테 받아야함
+
+  const handleNewPostPress = () => {
+    setIsNewPostVisible(true);
+  };
+
+  const handlePostSubmit = (postData) => {
+    // TODO: API 호출로 게시물 작성
+    console.log("새 게시물 작성:", postData);
+    // 작성 후 게시물 목록 새로고침
+  };
 
   const renderPost = ({ item }) => <PostCard post={item} />;
 
@@ -95,7 +106,11 @@ export default function Community() {
           <ScreenHeader
             title="Community"
             rightContent={
-              <TouchableOpacity style={styles.newPostButton}>
+              <TouchableOpacity
+                style={styles.newPostButton}
+                onPress={handleNewPostPress}
+                activeOpacity={0.7}
+              >
                 <Image source={iconNewPost} style={styles.newPostIcon} />
               </TouchableOpacity>
             }
@@ -106,18 +121,17 @@ export default function Community() {
           <View style={styles.searchBox}>
             <TextInput
               placeholder="제목, 작성자, 내용을 검색하세요"
-              placeholderTextColor="#666"
+              placeholderTextColor={palette.grayPlaceholder}
               style={styles.searchInput}
             />
             {/* TODO: 검색 아이콘 이미지 추가 필요 - assets/search_icon.png */}
-            <View style={styles.searchIconContainer}>
-              {/* <Image 
-                source={require('@assets/search_icon.png')} 
+            <TouchableOpacity style={styles.searchIconContainer}>
+              <Image
+                source={iconSearch}
                 style={styles.searchIconImage}
                 resizeMode="contain"
-              /> */}
-              <Text style={styles.searchIcon}>🔍</Text>
-            </View>
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -143,6 +157,11 @@ export default function Community() {
         />
       </View>
       <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
+      <NewPostPopUp
+        visible={isNewPostVisible}
+        onClose={() => setIsNewPostVisible(false)}
+        onSubmit={handlePostSubmit}
+      />
     </SafeAreaView>
   );
 }
@@ -159,11 +178,10 @@ const styles = StyleSheet.create({
     width: 33,
     height: 33,
     backgroundColor: palette.black,
-    borderColor: "#303030",
+    borderColor: palette.grayBorder,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-
   },
   newPostIcon: {
     width: 14.79,
@@ -201,10 +219,7 @@ const styles = StyleSheet.create({
   searchIconImage: {
     width: 18,
     height: 18,
-    tintColor: "#999", // 필요시 색상 조정
-  },
-  searchIcon: {
-    fontSize: 18,
+    tintColor: palette.grayLight,
   },
 
   filterRow: {

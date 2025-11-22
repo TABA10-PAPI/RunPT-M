@@ -7,6 +7,12 @@ export const palette = {
   black: "#090909",
   white: "#F8F8F8",
   gray: "#252525",
+  grayDark: "#333333",
+  grayMedium: "#555555",
+  grayLight: "#999999",
+  grayPlaceholder: "#666666",
+  grayBorder: "#303030",
+  graySubtitle: "#B5B5B5",
 };
 
 export const typography = {

@@ -11,6 +11,7 @@ import NaverCallback from "./app/OAuth/NaverCallback";
 import Join from "./app/start/Join";
 import Login from "./app/start/Login";
 import Welcome from "./app/start/Welcome";
+import Community from "./app/home/Community";
 const Stack = createNativeStackNavigator();
 const linking = {
   prefixes: ["http://localhost:8081"],
@@ -26,6 +27,7 @@ const linking = {
       Mypage: "mypage",
       KakaoCallback: "oauth/kakao",
       NaverCallback: "oauth/naver",
+      Community: "community"
     },
   },
 };
@@ -50,6 +52,7 @@ export default function App() {
           <Stack.Screen name="Mypage" component={Mypage} />
           <Stack.Screen name="KakaoCallback" component={KakaoCallback} />
           <Stack.Screen name="NaverCallback" component={NaverCallback} />
+          <Stack.Screen name="Community" component={Community} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

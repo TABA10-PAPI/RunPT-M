@@ -1,17 +1,17 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import Home from "./app/home/Home";
-import Run from "./app/run/Run";
-import Battery from "./app/battery/Battery";
-import Community from "./app/community/Community";
-import Mypage from "./app/mypage/Mypage";
-import KakaoCallback from "./app/OAuth/KakaoCallback";
-import NaverCallback from "./app/OAuth/NaverCallback";
-import Join from "./app/start/Join";
-import Login from "./app/start/Login";
-import Welcome from "./app/start/Welcome";
-import Community from "./app/home/Community";
+import Home from "@app/home/Home";
+import Run from "@app/run/Run";
+import Battery from "@app/battery/Battery";
+import Community from "@app/community/Community";
+import Mypage from "@app/mypage/Mypage";
+import KakaoCallback from "@app/OAuth/KakaoCallback";
+import NaverCallback from "@app/OAuth/NaverCallback";
+import Join from "@app/start/Join";
+import Login from "@app/start/Login";
+import Welcome from "@app/start/Welcome";
+
 const Stack = createNativeStackNavigator();
 const linking = {
   prefixes: ["http://localhost:8081"],
@@ -27,7 +27,6 @@ const linking = {
       Mypage: "mypage",
       KakaoCallback: "oauth/kakao",
       NaverCallback: "oauth/naver",
-      Community: "community"
     },
   },
 };
@@ -36,7 +35,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer linking={linking}>
         <Stack.Navigator
-          initialRouteName="Welcome"
+          initialRouteName="Community" //실행 시 화면(테스트 시 변경)
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: "#090909" },
@@ -52,7 +51,6 @@ export default function App() {
           <Stack.Screen name="Mypage" component={Mypage} />
           <Stack.Screen name="KakaoCallback" component={KakaoCallback} />
           <Stack.Screen name="NaverCallback" component={NaverCallback} />
-          <Stack.Screen name="Community" component={Community} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

@@ -13,7 +13,7 @@ import {
   globalStyles,
   palette,
   typography,
-} from "../../styles/globalStyles";
+} from "@styles/globalStyles";
 export default function Join() {
   const [nickname, setNickname] = useState("");
   const [height, setHeight] = useState("");

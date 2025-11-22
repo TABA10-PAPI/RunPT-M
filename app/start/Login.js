@@ -12,11 +12,11 @@ import {
   globalStyles,
   palette,
   typography,
-} from "../../styles/globalStyles";
-import { KAKAO_AUTH_URL, NAVER_AUTH_URL } from "../OAuth/Oauth.js";
-const logo = require("../../assets/logo.png");
-const kakaoImage = require("../../assets/kakao_phone.png");
-const naverImage = require("../../assets/naver_phone.png");
+} from "@styles/globalStyles";
+import { KAKAO_AUTH_URL, NAVER_AUTH_URL } from "@app/OAuth/Oauth.js";
+const logo = require("@assets/logo.png");
+const kakaoImage = require("@assets/kakao_phone.png");
+const naverImage = require("@assets/naver_phone.png");
 
 export default function Login() {
   const openOAuth = async (target) => {

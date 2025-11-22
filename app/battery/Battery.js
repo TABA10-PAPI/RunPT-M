@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import BottomNavigationBar from "../../components/BottomNavigationBar";
-import ScreenHeader from "../../components/ScreenHeader";
+import BottomNavigationBar from "@components/BottomNavigationBar";
+import ScreenHeader from "@components/ScreenHeader";
 
 export default function Battery() {
   const navigation = useNavigation();

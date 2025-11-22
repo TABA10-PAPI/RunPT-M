@@ -8,9 +8,9 @@ import {
 import {
   globalStyles,
   typography
-} from "../../styles/globalStyles";
+} from "@styles/globalStyles";
 import { SafeAreaView } from "react-native-safe-area-context";
-const logo = require("../../assets/logo.png");
+const logo = require("@assets/logo.png");
 
 export default function Welcome({ navigation }) {
   const goNext = () => {

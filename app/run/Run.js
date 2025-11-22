@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import BottomNavigationBar from "../../components/BottomNavigationBar";
+import BottomNavigationBar from "@components/BottomNavigationBar";
 
 export default function Run() {
   const navigation = useNavigation();

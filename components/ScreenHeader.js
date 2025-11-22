@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { palette } from "../styles/globalStyles";
+import { palette } from "@styles/globalStyles";
 
 export default function ScreenHeader({ title, subtitle, rightContent }) {
   return (

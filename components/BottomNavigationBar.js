@@ -1,13 +1,13 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { palette } from "../styles/globalStyles";
+import { palette } from "@styles/globalStyles";
 
-import RunIcon from "../assets/run.png";
-import BatteryIcon from "../assets/battery.png";
-import HomeIcon from "../assets/home.png";
-import CommunityIcon from "../assets/community.png";
-import MypageIcon from "../assets/mypage.png";
+import RunIcon from "@assets/run.png";
+import BatteryIcon from "@assets/battery.png";
+import HomeIcon from "@assets/home.png";
+import CommunityIcon from "@assets/community.png";
+import MypageIcon from "@assets/mypage.png";
 
 export default function BottomNavigationBar({ navigation, currentRoute }) {
   const insets = useSafeAreaInsets();

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  FlatList,
   Image,
   ScrollView,
   KeyboardAvoidingView,
@@ -16,14 +15,14 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { palette, typography } from "@styles/globalStyles";
 import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
+import CommentItem from "./components/CommentItem";
+import PostCard from "./components/PostCard";
 
-const iconThumb = require("@assets/thumbs_up.png");
-const iconComment = require("@assets/comments.png");
-const back_arrow = require("@assets/arrow_left.png");
-const send_button = require("@assets/sendbutton.png");
+const iconBack = require("@assets/arrow_left.png");
+const iconSend = require("@assets/sendbutton.png");
 // TODO: 이미지 추가 필요
-// const iconBack = require('@assets/back_arrow.png'); // 뒤로가기 아이콘
 // const iconProfile = require('@assets/profile_placeholder.png'); // 프로필 사진
+
 
 // Mock data - 실제로는 route.params에서 받아와야 함
 const MOCK_POST = {
@@ -60,48 +59,63 @@ const MOCK_COMMENTS = [
     comment: "저도 참여하고 싶습니다",
     timestamp: "2025/11/27 18:30",
   },
+  {
+    id: "1",
+    name: "김철수",
+    comment: "저도 같이 뛰고 싶습니다!",
+    timestamp: "2025/11/27 18:00",
+  },
+  {
+    id: "1",
+    name: "김철수",
+    comment: "저도 같이 뛰고 싶습니다!",
+    timestamp: "2025/11/27 18:00",
+  },
+  {
+    id: "1",
+    name: "김철수",
+    comment: "저도 같이 뛰고 싶습니다!",
+    timestamp: "2025/11/27 18:00",
+  },
 ];
 
 export default function DetailPost() {
   const navigation = useNavigation();
   const route = useRoute();
   const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState(
+    route.params?.comments || MOCK_COMMENTS
+  );
 
   // route.params에서 post 데이터 받아오기 (실제 구현 시)
   const post = route.params?.post || MOCK_POST;
-  const comments = route.params?.comments || MOCK_COMMENTS;
 
   const handleBack = () => {
     navigation.goBack();
   };
 
-  const handleSubmitComment = () => {
+  const handleSubmitComment = (post) => {
     if (commentText.trim()) {
       // TODO: 댓글 작성 API 호출
-      console.log("댓글 작성:", commentText);
+      const newComment = {
+        id: String(comments.length + 1),
+        name: "사용자",
+        comment: commentText,
+        timestamp: new Date()
+          .toLocaleString("ko-KR", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          .replace(/\./g, "/")
+          .replace(/,/g, ""),
+      };
+      setComments([...comments, newComment]);
       setCommentText("");
     }
   };
-
-  const renderComment = ({ item }) => (
-    <View style={styles.commentItem}>
-      <View style={styles.commentProfileCircle}>
-        {/* TODO: 프로필 이미지 추가 필요 */}
-        {/* <Image
-          source={require('@assets/profile_placeholder.png')}
-          style={styles.commentProfileImage}
-          resizeMode="cover"
-        /> */}
-      </View>
-      <View style={styles.commentContent}>
-        <View style={styles.commentHeader}>
-          <Text style={styles.commentName}>{item.name}</Text>
-          <Text style={styles.commentTimestamp}>{item.timestamp}</Text>
-        </View>
-        <Text style={styles.commentText}>{item.comment}</Text>
-      </View>
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -120,124 +134,50 @@ export default function DetailPost() {
                 activeOpacity={0.7}
               >
                 <Image
-                  source={back_arrow}
+                  source={iconBack}
                   style={styles.backIcon}
                   resizeMode="contain"
                 />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Community</Text>
-              <View style={styles.headerRight} />
+              <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
+                <Image
+                  source={require('@assets/menu.png')}
+                  style={styles.menuIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
+          <PostCard post={post} variant="detail" disablePress={true} />
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* 게시자 정보 헤더 */}
-            <View style={styles.postHeader}>
-              <View style={styles.profileCircle}>
-                {/* TODO: 프로필 이미지 추가 필요 */}
-                {/* <Image
-                  source={require('@assets/profile_placeholder.png')}
-                  style={styles.profileImage}
-                  resizeMode="cover"
-                /> */}
-              </View>
-
-              <View style={styles.userInfo}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.nickname}>{post.name}</Text>
-                  <Text style={styles.trophyIcon}>🏆</Text>
-                </View>
-                <Text style={styles.location}>{post.location}</Text>
-              </View>
-
-              <View style={styles.locationTagContainer}>
-                <Text style={styles.locationTag}>{post.location}</Text>
-              </View>
-            </View>
-
-            {/* 게시물 내용 */}
-            <View style={styles.postContent}>
-              <View style={styles.infoRow}>
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoIcon}>📍</Text>
-                  <View style={styles.infoContent}>
-                    <Text style={styles.infoLabel}>장소</Text>
-                    <Text style={styles.infoValue}>{post.place}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoIcon}>🕒</Text>
-                  <View style={styles.infoContent}>
-                    <Text style={styles.infoLabel}>출발시간</Text>
-                    <Text style={styles.infoValue}>{post.startTime}</Text>
-                  </View>
-                </View>
-              </View>
-
-              <Text style={styles.description}>{post.description}</Text>
-
-              <View style={styles.statsRow}>
-                <View style={styles.statBlock}>
-                  <Text style={styles.statLabel}>거리</Text>
-                  <Text style={styles.statValue}>{post.distance}</Text>
-                </View>
-
-                <View style={styles.statBlock}>
-                  <Text style={styles.statLabel}>시간</Text>
-                  <Text style={styles.statValue}>{post.duration}</Text>
-                </View>
-
-                <View style={styles.statBlock}>
-                  <Text style={styles.statLabel}>페이스</Text>
-                  <Text style={styles.statValue}>{post.pace}</Text>
-                </View>
-              </View>
-
-              <View style={styles.bottomRow}>
-                <View style={styles.actionRow}>
-                  <Image
-                    source={iconThumb}
-                    style={styles.iconThumb}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.bottomText}>{post.likes}</Text>
-                </View>
-
-                <View style={[styles.actionRow, styles.commentRow]}>
-                  <Image
-                    source={iconComment}
-                    style={styles.iconComment}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.bottomText}>{post.comments}</Text>
-                </View>
-
-                <Text style={styles.timestamp}>{post.timestamp}</Text>
-              </View>
-            </View>
-
             {/* 댓글 섹션 */}
             <View style={styles.commentsSection}>
               <Text style={styles.commentsHeader}>댓글 {comments.length}</Text>
-              <FlatList
-                data={comments}
-                keyExtractor={(item) => item.id}
-                renderItem={renderComment}
-                scrollEnabled={false}
-              />
+              {comments.map((comment) => (
+                <CommentItem key={comment.id} comment={comment} />
+              ))}
             </View>
           </ScrollView>
 
           {/* 댓글 입력 */}
           <View style={styles.commentInputContainer}>
             <View style={styles.commentInputBox}>
+              <View style={styles.inputProfileCircle}>
+                {/* TODO: 프로필 이미지 추가 필요 */}
+                {/* <Image
+                  source={require('@assets/profile_placeholder.png')}
+                  style={styles.inputProfileImage}
+                  resizeMode="cover"
+                /> */}
+              </View>
               <TextInput
-                placeholder="댓글을 입력하세요"
+                placeholder={`${post.name} 님에게 댓글`}
                 placeholderTextColor="#666"
                 style={styles.commentInput}
                 value={commentText}
@@ -245,11 +185,14 @@ export default function DetailPost() {
                 multiline
               />
               <TouchableOpacity
-                style={styles.submitButton}
                 onPress={handleSubmitComment}
                 activeOpacity={0.7}
               >
-                <Image source={send_button}></Image>
+                <Image
+                  source={iconSend}
+                  style={styles.sendIcon}
+                  resizeMode="contain"
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -308,10 +251,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     ...typography.bold,
   },
-  headerRight: {
+  menuButton: {
     position: "absolute",
     right: 0,
     width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  menuIcon: {
+    width: 24,
+    height: 24,
+    tintColor: palette.white,
   },
   scrollView: {
     flex: 1,
@@ -477,46 +428,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     ...typography.bold,
   },
-  commentItem: {
-    flexDirection: "row",
-    marginBottom: 16,
-  },
-  commentProfileCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#555",
-    overflow: "hidden",
-    marginRight: 12,
-  },
-  commentProfileImage: {
-    width: "100%",
-    height: "100%",
-  },
-  commentContent: {
-    flex: 1,
-  },
-  commentHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  commentName: {
-    color: palette.white,
-    fontSize: 14,
-    fontWeight: "600",
-    marginRight: 8,
-    ...typography.semibold,
-  },
-  commentTimestamp: {
-    color: "#999",
-    fontSize: 12,
-  },
-  commentText: {
-    color: "#999",
-    fontSize: 13,
-    lineHeight: 18,
-  },
   commentInputContainer: {
     paddingVertical: 12,
     paddingBottom: 100,
@@ -525,12 +436,24 @@ const styles = StyleSheet.create({
   },
   commentInputBox: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     backgroundColor: palette.gray,
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     minHeight: 44,
+  },
+  inputProfileCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#555",
+    overflow: "hidden",
+    marginRight: 12,
+  },
+  inputProfileImage: {
+    width: "100%",
+    height: "100%",
   },
   commentInput: {
     flex: 1,
@@ -538,20 +461,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     maxHeight: 100,
     padding: 0,
+    paddingVertical: 8,
   },
   submitButton: {
-    marginLeft: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: palette.green,
-    borderRadius: 16,
+    marginLeft: 8,
     justifyContent: "center",
     alignItems: "center",
   },
-  submitButtonText: {
-    color: palette.black,
-    fontSize: 14,
-    fontWeight: "600",
-    ...typography.semibold,
+  sendIcon: {
+    width: 32,
+    height: 32,
   },
 });

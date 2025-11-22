@@ -6,18 +6,33 @@ import { palette, typography } from "@styles/globalStyles";
 const iconThumb = require("@assets/thumbs_up.png");
 const iconComment = require("@assets/comments.png");
 
-export default function PostCard({ post }) {
+export default function PostCard({ 
+  post, 
+  variant = "list", // "list" 또는 "detail"
+  containerStyle,
+  cardStyle,
+  disablePress = false 
+}) {
   const navigation = useNavigation();
 
   const handlePostPress = () => {
-    navigation.navigate("DetailPost", { post });
+    if (!disablePress) {
+      navigation.navigate("DetailPost", { post });
+    }
   };
 
+  const isDetailView = variant === "detail";
+  const ContainerComponent = disablePress ? View : TouchableOpacity;
+
   return (
-    <TouchableOpacity
-      style={styles.postContainer}
-      onPress={handlePostPress}
-      activeOpacity={0.8}
+    <ContainerComponent
+      style={[
+        styles.postContainer,
+        isDetailView && styles.postContainerDetail,
+        containerStyle,
+      ]}
+      onPress={disablePress ? undefined : handlePostPress}
+      activeOpacity={disablePress ? 1 : 0.8}
     >
       {/* 게시자 정보 헤더 */}
       <View style={styles.postHeader}>
@@ -45,7 +60,11 @@ export default function PostCard({ post }) {
       </View>
 
       {/* 게시물 카드 */}
-      <View style={styles.card}>
+      <View style={[
+        styles.card,
+        isDetailView && styles.cardDetail,
+        cardStyle,
+      ]}>
         {/* 장소 및 출발시간 정보 */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
@@ -66,7 +85,10 @@ export default function PostCard({ post }) {
         </View>
 
         {/* 게시물 설명 */}
-        <Text style={styles.description}>
+        <Text style={[
+          styles.description,
+          isDetailView && styles.descriptionDetail
+        ]}>
           {post.description || "원하는 코스 있으시면 맞추어 뛰고 싶습니다"}
         </Text>
 
@@ -116,13 +138,16 @@ export default function PostCard({ post }) {
           </TouchableOpacity>
         </View>
       </View>
-    </TouchableOpacity>
+    </ContainerComponent>
   );
 }
 
 const styles = StyleSheet.create({
   postContainer: {
     marginBottom: 20,
+  },
+  postContainerDetail: {
+    marginBottom: 0, // 상세 페이지에서는 하단 마진 제거
   },
 
   // 게시자 정보 헤더
@@ -185,6 +210,10 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 16,
   },
+  cardDetail: {
+    // 상세 페이지에서 필요한 추가 스타일이 있다면 여기에 추가
+    // 예: marginBottom: 0 등
+  },
 
   // 장소 및 출발시간 정보
   infoRow: {
@@ -222,6 +251,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     marginBottom: 16,
+  },
+  descriptionDetail: {
+    color: palette.white, // 상세 페이지에서는 흰색
   },
 
   // 통계 정보

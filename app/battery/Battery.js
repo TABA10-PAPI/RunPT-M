@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import ScreenHeader from "@components/ScreenHeader";
+import { palette } from "@styles/globalStyles";
 
 export default function Battery() {
   const navigation = useNavigation();
@@ -40,16 +41,19 @@ export default function Battery() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.batteryCard}>
-            <View style={styles.batteryOutline}>
-              <View
-                style={[
-                  styles.batteryFill,
-                  { width: `${batteryLevel}%` },
-                ]}
-              />
-              <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
+            <View style={styles.batteryContainer}>
+              <View style={styles.batteryOutline}>
+                <View
+                  style={[
+                    styles.batteryFill,
+                    { width: `${batteryLevel}%` },
+                  ]}
+                >
+                  <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
+                </View>
+              </View>
+              <View style={styles.batteryCap} />
             </View>
-            <View style={styles.batteryCap} />
           </View>
 
           <View style={styles.commentCard}>
@@ -111,7 +115,7 @@ export default function Battery() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#090909",
+    backgroundColor: palette.black,
   },
   wrapper: {
     flex: 1,
@@ -128,18 +132,24 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   batteryCard: {
-    backgroundColor: "#111111",
+    backgroundColor: "transparent",
     borderRadius: 24,
     padding: 24,
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
   },
-  batteryOutline: {
+  batteryContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 0,
     width: "100%",
+  },
+  batteryOutline: {
+    flex: 1,
     height: 140,
     borderWidth: 4,
-    borderColor: "#FFFFFF",
+    borderColor: palette.white,
     borderRadius: 28,
     padding: 12,
     justifyContent: "center",
@@ -148,23 +158,26 @@ const styles = StyleSheet.create({
   batteryFill: {
     height: "100%",
     borderRadius: 18,
-    backgroundColor: "#DAFD2E",
+    backgroundColor: palette.green,
   },
   batteryLabel: {
     position: "absolute",
-    alignSelf: "center",
-    fontSize: 24,
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
+    fontSize: 30,
     fontWeight: "700",
-    color: "#000000",
+    color: palette.black,
   },
   batteryCap: {
-    width: 18,
-    height: 54,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
+    width: 20,
+    height: 66,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    backgroundColor: palette.white,
   },
   commentCard: {
-    backgroundColor: "#1B1B1B",
+    backgroundColor: palette.gray,
     borderRadius: 20,
     padding: 18,
     gap: 8,
@@ -172,12 +185,12 @@ const styles = StyleSheet.create({
   commentTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: palette.white,
   },
   commentText: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#CFCFCF",
+    color: palette.graySubtitle,
   },
   statsGrid: {
     flexDirection: "row",
@@ -187,7 +200,7 @@ const styles = StyleSheet.create({
   statCard: {
     flexBasis: "47%",
     borderRadius: 18,
-    backgroundColor: "#1B1B1B",
+    backgroundColor: palette.gray,
     padding: 16,
     gap: 6,
   },
@@ -195,14 +208,14 @@ const styles = StyleSheet.create({
     flexBasis: "100%",
   },
   statCardAccent: {
-    backgroundColor: "#DAFD2E",
+    backgroundColor: palette.green,
   },
   statLabel: {
     fontSize: 14,
-    color: "#CFCFCF",
+    color: palette.graySubtitle,
   },
   statLabelDark: {
-    color: "#1A1A1A",
+    color: palette.grayDark,
   },
   statValueRow: {
     flexDirection: "row",
@@ -212,17 +225,17 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: palette.white,
   },
   statValueDark: {
-    color: "#090909",
+    color: palette.black,
   },
   statUnit: {
     fontSize: 16,
-    color: "#A0A0A0",
+    color: palette.graySubtitle,
     textTransform: "lowercase",
   },
   statUnitDark: {
-    color: "#1A1A1A",
+    color: palette.grayDark,
   },
 });

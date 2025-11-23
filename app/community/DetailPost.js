@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "@config/api";
 import { palette, typography } from "@styles/globalStyles";
 import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
@@ -83,55 +87,135 @@ export default function DetailPost() {
   const navigation = useNavigation();
   const route = useRoute();
   const [commentText, setCommentText] = useState("");
-  
-  // TODO: 백엔드에서 게시물 상세 정보 받아오기
-  // GET /community/detail?communityid={communityid}
-  // Response: { id, uid, startpoint, distance, starttime, targetpace, shortinfo, createAt, comments, nickname, tier }
-  const post = route.params?.post || MOCK_POST;
-  console.log("[DetailPost] 게시물 상세 정보 (백엔드에서 받아와야 함):", post);
+  const [post, setPost] = useState(route.params?.post || MOCK_POST);
+  const [comments, setComments] = useState(route.params?.comments || MOCK_COMMENTS);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  // TODO: 백엔드에서 댓글 목록 받아오기
-  // GET /community/detail?communityid={communityid}의 comments 필드
-  // Response comments: [{ id, communityid, uid, content, createAt, nickname, tier }]
-  const [comments, setComments] = useState(
-    route.params?.comments || MOCK_COMMENTS
-  );
-  console.log("[DetailPost] 댓글 목록 (백엔드에서 받아와야 함):", comments);
+  const communityId = route.params?.post?.id || route.params?.post?.apiData?.id;
+
+  // API 응답을 PostCard 형식으로 변환
+  const transformPostData = (apiPost) => {
+    return {
+      id: String(apiPost.id || ""),
+      name: apiPost.nickname || "사용자",
+      location: apiPost.title || "",
+      place: apiPost.startpoint || "",
+      startTime: apiPost.starttime || "",
+      distance: `${apiPost.distance || 0}KM`,
+      duration: "",
+      pace: apiPost.targetpace || "",
+      likes: 0,
+      comments: apiPost.comments?.length || 0,
+      description: apiPost.shortinfo || "",
+      timestamp: apiPost.createAt || "",
+      apiData: apiPost,
+    };
+  };
+
+  // 댓글 데이터 변환
+  const transformCommentData = (apiComment) => {
+    return {
+      id: String(apiComment.id || ""),
+      name: apiComment.nickname || "사용자",
+      comment: apiComment.content || "",
+      timestamp: apiComment.createAt
+        ? new Date(apiComment.createAt)
+            .toLocaleString("ko-KR", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+            .replace(/\./g, "/")
+            .replace(/,/g, "")
+        : "",
+    };
+  };
+
+  // 게시물 상세 정보 가져오기
+  const fetchPostDetail = async () => {
+    if (!communityId) {
+      console.log("[DetailPost] communityId가 없어서 상세 정보를 가져올 수 없습니다.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      // GET /community/detail?communityid={communityid}
+      const response = await apiClient.get("/community/detail", {
+        params: { communityid: parseInt(communityId, 10) },
+      });
+
+      console.log("[DetailPost] 게시물 상세 정보 응답:", response.data);
+
+      const apiPost = response.data;
+      const transformedPost = transformPostData(apiPost);
+      setPost(transformedPost);
+
+      // 댓글 목록 변환
+      if (Array.isArray(apiPost.comments)) {
+        const transformedComments = apiPost.comments.map(transformCommentData);
+        setComments(transformedComments);
+      }
+    } catch (error) {
+      console.error("[DetailPost] 게시물 상세 정보 가져오기 실패:", error);
+      Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (communityId) {
+      fetchPostDetail();
+    }
+  }, [communityId]);
 
   const handleBack = () => {
     navigation.goBack();
   };
 
-  const handleSubmitComment = (post) => {
-    if (commentText.trim()) {
-      // TODO: 백엔드로 댓글 작성 API 호출
+  const handleSubmitComment = async () => {
+    if (!commentText.trim()) {
+      return;
+    }
+
+    if (!communityId) {
+      Alert.alert("오류", "게시물 정보가 없습니다.");
+      return;
+    }
+
+    try {
+      setIsSubmittingComment(true);
+      const uid = await AsyncStorage.getItem("uid");
+      if (!uid) {
+        Alert.alert("오류", "로그인이 필요합니다.");
+        return;
+      }
+
       // POST /community/comment
-      // Request: { communityid, uid, content }
-      // Response: { content, createAt, nickname, tier }
-      console.log("[DetailPost] 댓글 작성 요청 (백엔드로 전송 필요):", {
-        communityid: post.id,
-        content: commentText,
+      const response = await apiClient.post("/community/comment", {
+        communityid: parseInt(communityId, 10),
+        uid: parseInt(uid, 10),
+        content: commentText.trim(),
       });
-      
-      // 임시: API 응답 대기 중이므로 로컬 상태 업데이트
-      const newComment = {
-        id: String(comments.length + 1),
-        name: "사용자",
-        comment: commentText,
-        timestamp: new Date()
-          .toLocaleString("ko-KR", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-          .replace(/\./g, "/")
-          .replace(/,/g, ""),
-      };
+
+      console.log("[DetailPost] 댓글 작성 응답:", response.data);
+
+      // 응답 데이터를 댓글 형식으로 변환
+      const newComment = transformCommentData(response.data);
       setComments([...comments, newComment]);
       setCommentText("");
-      console.log("[DetailPost] 댓글 작성 후 UI 업데이트 (백엔드 응답 후 실제 데이터로 교체 필요)");
+
+      // 게시물 상세 정보 새로고침 (댓글 수 업데이트)
+      await fetchPostDetail();
+    } catch (error) {
+      console.error("[DetailPost] 댓글 작성 실패:", error);
+      Alert.alert("오류", error.response?.data?.message || "댓글 작성에 실패했습니다.");
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -172,20 +256,28 @@ export default function DetailPost() {
             />
           </View>
 
-          <PostCard post={post} variant="detail" disablePress={true} />
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* 댓글 섹션 */}
-            <View style={styles.commentsSection}>
-              <Text style={styles.commentsHeader}>댓글 {comments.length}</Text>
-              {comments.map((comment) => (
-                <CommentItem key={comment.id} comment={comment} />
-              ))}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={palette.green} />
             </View>
-          </ScrollView>
+          ) : (
+            <>
+              <PostCard post={post} variant="detail" disablePress={true} />
+              <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* 댓글 섹션 */}
+                <View style={styles.commentsSection}>
+                  <Text style={styles.commentsHeader}>댓글 {comments.length}</Text>
+                  {comments.map((comment) => (
+                    <CommentItem key={comment.id} comment={comment} />
+                  ))}
+                </View>
+              </ScrollView>
+            </>
+          )}
 
           {/* 댓글 입력 */}
           <View style={styles.commentInputContainer}>
@@ -209,12 +301,17 @@ export default function DetailPost() {
               <TouchableOpacity
                 onPress={handleSubmitComment}
                 activeOpacity={0.7}
+                disabled={isSubmittingComment}
               >
-                <Image
-                  source={iconSend}
-                  style={styles.sendIcon}
-                  resizeMode="contain"
-                />
+                {isSubmittingComment ? (
+                  <ActivityIndicator size="small" color={palette.green} />
+                ) : (
+                  <Image
+                    source={iconSend}
+                    style={styles.sendIcon}
+                    resizeMode="contain"
+                  />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -490,5 +587,11 @@ const styles = StyleSheet.create({
   sendIcon: {
     width: 32,
     height: 32,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
   },
 });

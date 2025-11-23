@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { palette, typography } from "@styles/globalStyles";
 import BottomNavigationBar from "@components/BottomNavigationBar";
-import { palette } from "@styles/globalStyles";
 import { Ionicons } from "@expo/vector-icons";
 
 // Rank badges
@@ -18,6 +18,7 @@ const silverMedal = require("@assets/rank/Silver I.png");
 
 // Arrow icons
 const arrowLeft = require("@assets/community/arrow_left.png");
+import HealthDataDisplay from "./components/HealthDataDisplay";
 
 export default function Home() {
   const navigation = useNavigation();
@@ -221,7 +222,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#090909",
+    backgroundColor: palette.black,
   },
   wrapper: {
     flex: 1,

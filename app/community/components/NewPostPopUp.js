@@ -10,7 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "@config/api";
 import { palette, typography } from "@styles/globalStyles";
 import FilterChip from "./FilterChip";
 
@@ -27,27 +31,68 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
   const [paceMin, setPaceMin] = useState("6");
   const [paceSec, setPaceSec] = useState("30");
 
-  // TODO: 백엔드에서 지역 옵션 받아오기
+  // TODO: 백엔드에서 지역 옵션 받아오기 (현재는 하드코딩)
   // GET /community/locations 또는 유사한 API
   const locationOptions = ["수지구 죽전동", "수지구 보정동"];
-  console.log("[NewPostPopUp] 지역 옵션 (백엔드에서 받아와야 함):", locationOptions);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    // TODO: 백엔드로 게시물 작성 API 호출
-    // POST /community/add
-    // Request: { uid, title, startpoint, distance, starttime, targetpace, shortinfo }
-    const postData = {
-      uid: null, // TODO: AsyncStorage에서 uid 가져오기
-      title: selectedLocation,
-      startpoint: place,
-      distance: parseInt(distance, 10),
-      starttime: startTime,
-      targetpace: `${paceMin}'${paceSec}"/KM`,
-      shortinfo: content,
-    };
-    console.log("[NewPostPopUp] 게시물 작성 요청 (백엔드로 전송 필요):", postData);
-    onSubmit(postData);
-    handleClose();
+  const handleSubmit = async () => {
+    // 유효성 검사
+    if (!place.trim() || !startTime.trim() || !content.trim()) {
+      Alert.alert("입력 오류", "모든 필드를 입력해주세요.");
+      return;
+    }
+
+    if (!distance || !paceMin || !paceSec) {
+      Alert.alert("입력 오류", "러닝 정보를 모두 입력해주세요.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const uid = await AsyncStorage.getItem("uid");
+      if (!uid) {
+        Alert.alert("오류", "로그인이 필요합니다.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const targetpace = `${paceMin}'${paceSec}"/KM`;
+
+      // POST /community/add
+      await apiClient.post("/community/add", {
+        uid: parseInt(uid, 10),
+        title: selectedLocation,
+        startpoint: place,
+        distance: parseInt(distance, 10),
+        starttime: startTime,
+        targetpace: targetpace,
+        shortinfo: content,
+      });
+
+      console.log("[NewPostPopUp] 게시물 작성 성공");
+      
+      const postData = {
+        title: selectedLocation,
+        startpoint: place,
+        distance: parseInt(distance, 10),
+        starttime: startTime,
+        targetpace: targetpace,
+        shortinfo: content,
+      };
+      
+      onSubmit(postData);
+      handleClose();
+    } catch (error) {
+      console.error("[NewPostPopUp] 게시물 작성 실패:", error);
+      Alert.alert(
+        "오류",
+        error.response?.data?.message || "게시물 작성에 실패했습니다."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -104,8 +149,13 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
             <TouchableOpacity
               onPress={handleSubmit}
               activeOpacity={0.7}
+              disabled={isSubmitting}
             >
-              <Text style={styles.submitButtonText}>완료</Text>
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={palette.green} />
+              ) : (
+                <Text style={styles.submitButtonText}>완료</Text>
+              )}
             </TouchableOpacity>
 
           </View>

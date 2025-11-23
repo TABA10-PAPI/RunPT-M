@@ -2,7 +2,9 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { palette, typography } from "@styles/globalStyles";
 import BottomNavigationBar from "@components/BottomNavigationBar";
+import HealthDataDisplay from "./components/HealthDataDisplay";
 
 export default function Home() {
   const navigation = useNavigation();
@@ -15,6 +17,7 @@ export default function Home() {
         <Text style={styles.subtitle}>
           러닝 데이터를 연동해 맞춤 피드백을 표시할 영역입니다.
         </Text>
+        <HealthDataDisplay />
       </View>
       <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
     </SafeAreaView>
@@ -24,7 +27,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#090909",
+    backgroundColor: palette.black,
   },
   container: {
     flex: 1,
@@ -34,12 +37,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: palette.white,
     marginBottom: 12,
+    ...typography.bold,
   },
   subtitle: {
     fontSize: 16,
-    color: "#B5B5B5",
+    color: palette.grayLight,
     lineHeight: 24,
+    marginBottom: 24,
   },
 });

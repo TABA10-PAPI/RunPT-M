@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     height: "100%",
+    zIndex: 10,
   },
   left: {
     position: "absolute",
@@ -51,6 +52,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     height: "100%",
+    zIndex: 10,
   },
 });
 

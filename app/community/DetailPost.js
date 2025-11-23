@@ -139,8 +139,8 @@ export default function DetailPost() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
-        behavior="height"
-        keyboardVerticalOffset={20}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <View style={styles.container}>
           {/* 헤더 */}
@@ -241,6 +241,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     marginTop: 8,
     marginBottom: 16,
+    zIndex: 10,
   },
   header: {
     flexDirection: "row",

@@ -83,12 +83,20 @@ export default function DetailPost() {
   const navigation = useNavigation();
   const route = useRoute();
   const [commentText, setCommentText] = useState("");
+  
+  // TODO: 백엔드에서 게시물 상세 정보 받아오기
+  // GET /community/detail?communityid={communityid}
+  // Response: { id, uid, startpoint, distance, starttime, targetpace, shortinfo, createAt, comments, nickname, tier }
+  const post = route.params?.post || MOCK_POST;
+  console.log("[DetailPost] 게시물 상세 정보 (백엔드에서 받아와야 함):", post);
+
+  // TODO: 백엔드에서 댓글 목록 받아오기
+  // GET /community/detail?communityid={communityid}의 comments 필드
+  // Response comments: [{ id, communityid, uid, content, createAt, nickname, tier }]
   const [comments, setComments] = useState(
     route.params?.comments || MOCK_COMMENTS
   );
-
-  // route.params에서 post 데이터 받아오기 (실제 구현 시)
-  const post = route.params?.post || MOCK_POST;
+  console.log("[DetailPost] 댓글 목록 (백엔드에서 받아와야 함):", comments);
 
   const handleBack = () => {
     navigation.goBack();
@@ -96,7 +104,16 @@ export default function DetailPost() {
 
   const handleSubmitComment = (post) => {
     if (commentText.trim()) {
-      // TODO: 댓글 작성 API 호출
+      // TODO: 백엔드로 댓글 작성 API 호출
+      // POST /community/comment
+      // Request: { communityid, uid, content }
+      // Response: { content, createAt, nickname, tier }
+      console.log("[DetailPost] 댓글 작성 요청 (백엔드로 전송 필요):", {
+        communityid: post.id,
+        content: commentText,
+      });
+      
+      // 임시: API 응답 대기 중이므로 로컬 상태 업데이트
       const newComment = {
         id: String(comments.length + 1),
         name: "사용자",
@@ -114,6 +131,7 @@ export default function DetailPost() {
       };
       setComments([...comments, newComment]);
       setCommentText("");
+      console.log("[DetailPost] 댓글 작성 후 UI 업데이트 (백엔드 응답 후 실제 데이터로 교체 필요)");
     }
   };
 

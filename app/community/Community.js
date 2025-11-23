@@ -85,16 +85,27 @@ export default function Community() {
   const [selectedFilter, setSelectedFilter] = useState("수지구 죽전동");
   const [isNewPostVisible, setIsNewPostVisible] = useState(false);
 
+  // TODO: 백엔드에서 필터 옵션 받아오기
+  // GET /community/filters 또는 유사한 API
   const filterOptions = ["수지구 죽전동", "수지구 보정동"]; // 백엔드한테 받아야함
+  console.log("[Community] 필터 옵션 (백엔드에서 받아와야 함):", filterOptions);
+
+  // TODO: 백엔드에서 게시물 목록 받아오기
+  // GET /community/list?filter={selectedFilter}&search={searchText}
+  // MOCK_POSTS 대신 API 응답 데이터 사용
+  console.log("[Community] 게시물 목록 (백엔드에서 받아와야 함):", MOCK_POSTS);
 
   const handleNewPostPress = () => {
     setIsNewPostVisible(true);
   };
 
   const handlePostSubmit = (postData) => {
-    // TODO: API 호출로 게시물 작성
-    console.log("새 게시물 작성:", postData);
-    // 작성 후 게시물 목록 새로고침
+    // TODO: 백엔드로 게시물 작성 API 호출
+    // POST /community/add
+    // Request: { uid, title, startpoint, distance, starttime, targetpace, shortinfo }
+    console.log("[Community] 게시물 작성 요청 (백엔드로 전송 필요):", postData);
+    // 작성 후 게시물 목록 새로고침 필요
+    console.log("[Community] 게시물 작성 후 목록 새로고침 필요");
   };
 
   const renderPost = ({ item }) => <PostCard post={item} />;
@@ -123,8 +134,12 @@ export default function Community() {
               placeholder="제목, 작성자, 내용을 검색하세요"
               placeholderTextColor={palette.grayPlaceholder}
               style={styles.searchInput}
+              onChangeText={(text) => {
+                // TODO: 백엔드로 검색 요청
+                // GET /community/list?search={text}
+                console.log("[Community] 검색어 입력 (백엔드로 검색 요청 필요):", text);
+              }}
             />
-            {/* TODO: 검색 아이콘 이미지 추가 필요 - assets/search_icon.png */}
             <TouchableOpacity style={styles.searchIconContainer}>
               <Image
                 source={iconSearch}

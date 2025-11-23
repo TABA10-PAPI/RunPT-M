@@ -112,16 +112,27 @@ export default function PostCard({
           </View>
         </View>
 
-        {/* 좋아요 및 댓글 */}
-        <View style={styles.bottomRow}>
-          <TouchableOpacity style={styles.actionRow} activeOpacity={0.7}>
-            <Image
-              source={iconThumb}
-              style={styles.iconThumb}
-              resizeMode="contain"
-            />
-            <Text style={styles.bottomText}>{post.likes}</Text>
-          </TouchableOpacity>
+              {/* 좋아요 및 댓글 */}
+              <View style={styles.bottomRow}>
+                <TouchableOpacity
+                  style={styles.actionRow}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    // TODO: 백엔드로 좋아요 API 호출
+                    // POST /community/like 또는 유사한 API
+                    // Request: { communityid, uid }
+                    console.log("[PostCard] 좋아요 요청 (백엔드로 전송 필요):", {
+                      communityid: post.id,
+                    });
+                  }}
+                >
+                  <Image
+                    source={iconThumb}
+                    style={styles.iconThumb}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.bottomText}>{post.likes}</Text>
+                </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionRow, styles.commentRow]}

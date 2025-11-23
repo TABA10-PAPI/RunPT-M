@@ -23,7 +23,7 @@ export default function FilterChip({ label, isActive, onPress }) {
 
 const styles = StyleSheet.create({
   chip: {
-    backgroundColor: palette.gray,
+    backgroundColor: palette.grayMedium,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,

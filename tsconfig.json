@@ -8,7 +8,8 @@
       "@components/*": ["./components/*"],
       "@styles/*": ["./styles/*"],
       "@assets/*": ["./assets/*"],
-      "@app/*": ["./app/*"]
+      "@app/*": ["./app/*"],
+      "@config/*": ["./config/*"]
     }
   },
   "include": [

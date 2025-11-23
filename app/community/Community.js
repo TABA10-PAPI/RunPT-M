@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "@config/api";
 import { palette, typography } from "@styles/globalStyles";
 import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
@@ -84,28 +88,108 @@ export default function Community() {
   // 필터 선택 상태 관리
   const [selectedFilter, setSelectedFilter] = useState("수지구 죽전동");
   const [isNewPostVisible, setIsNewPostVisible] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
 
-  // TODO: 백엔드에서 필터 옵션 받아오기
+  // TODO: 백엔드에서 필터 옵션 받아오기 (현재는 하드코딩)
   // GET /community/filters 또는 유사한 API
-  const filterOptions = ["수지구 죽전동", "수지구 보정동"]; // 백엔드한테 받아야함
-  console.log("[Community] 필터 옵션 (백엔드에서 받아와야 함):", filterOptions);
+  const filterOptions = ["수지구 죽전동", "수지구 보정동"];
 
-  // TODO: 백엔드에서 게시물 목록 받아오기
-  // GET /community/list?filter={selectedFilter}&search={searchText}
-  // MOCK_POSTS 대신 API 응답 데이터 사용
-  console.log("[Community] 게시물 목록 (백엔드에서 받아와야 함):", MOCK_POSTS);
+  // API 응답을 PostCard 형식으로 변환
+  const transformPostData = (apiPost) => {
+    return {
+      id: String(apiPost.id || ""),
+      name: apiPost.nickname || "사용자", // TODO: tier 값 처리
+      location: apiPost.title || "",
+      place: apiPost.startpoint || "",
+      startTime: apiPost.starttime || "",
+      distance: `${apiPost.distance || 0}KM`,
+      duration: "", // API에 없음
+      pace: apiPost.targetpace || "",
+      likes: 0, // API에 없음
+      comments: apiPost.comments?.length || 0,
+      description: apiPost.shortinfo || "",
+      timestamp: apiPost.createAt || "",
+      // API 원본 데이터 유지
+      apiData: apiPost,
+    };
+  };
+
+  // 게시물 목록 가져오기
+  const fetchPosts = async () => {
+    try {
+      setIsLoading(true);
+      const uid = await AsyncStorage.getItem("uid");
+      if (!uid) {
+        console.log("[Community] uid가 없어서 게시물을 가져올 수 없습니다.");
+        setIsLoading(false);
+        return;
+      }
+
+      // GET /community/home?uid={uid}
+      const response = await apiClient.get("/community/home", {
+        params: { uid },
+      });
+
+      console.log("[Community] 게시물 목록 응답:", response.data);
+
+      if (Array.isArray(response.data)) {
+        const transformedPosts = response.data.map(transformPostData);
+        setPosts(transformedPosts);
+      } else {
+        console.error("[Community] 게시물 목록 형식이 올바르지 않습니다:", response.data);
+      }
+    } catch (error) {
+      console.error("[Community] 게시물 목록 가져오기 실패:", error);
+      Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   const handleNewPostPress = () => {
     setIsNewPostVisible(true);
   };
 
-  const handlePostSubmit = (postData) => {
-    // TODO: 백엔드로 게시물 작성 API 호출
-    // POST /community/add
-    // Request: { uid, title, startpoint, distance, starttime, targetpace, shortinfo }
-    console.log("[Community] 게시물 작성 요청 (백엔드로 전송 필요):", postData);
-    // 작성 후 게시물 목록 새로고침 필요
-    console.log("[Community] 게시물 작성 후 목록 새로고침 필요");
+  const handlePostSubmit = async (postData) => {
+    try {
+      const uid = await AsyncStorage.getItem("uid");
+      if (!uid) {
+        Alert.alert("오류", "로그인이 필요합니다.");
+        return;
+      }
+
+      // POST /community/add
+      await apiClient.post("/community/add", {
+        uid: parseInt(uid, 10),
+        title: postData.title,
+        startpoint: postData.startpoint,
+        distance: postData.distance,
+        starttime: postData.starttime,
+        targetpace: postData.targetpace,
+        shortinfo: postData.shortinfo,
+      });
+
+      console.log("[Community] 게시물 작성 성공");
+      
+      // 게시물 목록 새로고침
+      await fetchPosts();
+    } catch (error) {
+      console.error("[Community] 게시물 작성 실패:", error);
+      Alert.alert("오류", error.response?.data?.message || "게시물 작성에 실패했습니다.");
+    }
+  };
+
+  const handleSearch = (text) => {
+    setSearchText(text);
+    // TODO: 검색 기능은 백엔드 API가 준비되면 구현
+    // 현재는 클라이언트 사이드 필터링
+    console.log("[Community] 검색어:", text);
   };
 
   const renderPost = ({ item }) => <PostCard post={item} />;
@@ -134,11 +218,8 @@ export default function Community() {
               placeholder="제목, 작성자, 내용을 검색하세요"
               placeholderTextColor={palette.grayPlaceholder}
               style={styles.searchInput}
-              onChangeText={(text) => {
-                // TODO: 백엔드로 검색 요청
-                // GET /community/list?search={text}
-                console.log("[Community] 검색어 입력 (백엔드로 검색 요청 필요):", text);
-              }}
+              value={searchText}
+              onChangeText={handleSearch}
             />
             <TouchableOpacity style={styles.searchIconContainer}>
               <Image
@@ -163,13 +244,21 @@ export default function Community() {
           ))}
         </View>
 
-        <FlatList
-          data={MOCK_POSTS}
-          keyExtractor={(item) => item.id}
-          renderItem={renderPost}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
-        />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={palette.green} />
+          </View>
+        ) : (
+          <FlatList
+            data={posts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderPost}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            refreshing={isLoading}
+            onRefresh={fetchPosts}
+          />
+        )}
       </View>
       <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
       <NewPostPopUp
@@ -248,5 +337,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     ...typography.semibold,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

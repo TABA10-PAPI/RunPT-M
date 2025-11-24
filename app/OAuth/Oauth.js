@@ -9,6 +9,9 @@ const REDIRECT_URI_NAVER =
   process.env.EXPO_PUBLIC_NAVER_REDIRECT_URI;
 const STATE = "RANDOM_STRING";
 
+export const KAKAO_CALLBACK_URL = process.env.EXPO_PUBLIC_BASE_URL + "/oauth/login/kakao";
+export const NAVER_CALLBACK_URL = process.env.EXPO_PUBLIC_BASE_URL + "/oauth/login/naver";
+
 export const KAKAO_AUTH_URL =
   KAKAO_API_KEY && KAKAO_REDIRECT_URI
     ? `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_API_KEY}&redirect_uri=${encodeURIComponent(
@@ -22,3 +25,4 @@ export const NAVER_AUTH_URL =
         REDIRECT_URI_NAVER
       )}`
     : "";
+

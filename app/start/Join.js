@@ -14,7 +14,7 @@ import {
   palette,
   typography,
 } from "@styles/globalStyles";
-export default function Join() {
+export default function Join(defaultNickname) {
   const [nickname, setNickname] = useState("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
@@ -57,6 +57,7 @@ export default function Join() {
               style={styles.input}
               value={nickname}
               onChangeText={setNickname}
+              defaultValue={defaultNickname}
             />
           </View>
 

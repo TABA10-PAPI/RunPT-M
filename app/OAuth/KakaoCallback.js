@@ -10,6 +10,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KAKAO_CALLBACK_URL } from "./Oauth";
+
 
 export default function KakaoCallback() {
   const navigation = useNavigation();
@@ -27,14 +29,19 @@ export default function KakaoCallback() {
 
       try {
         const response = await axios.post(
-          "API명세 후 수정",
+          KAKAO_CALLBACK_URL,
           { code },
           { headers: { "Content-Type": "application/json" } }
         );
 
-        const { token } = response.data;
+        const { token, new_user } = response.data;
         await AsyncStorage.setItem("accessToken", token);
-        navigation.navigate("Join");
+        
+        if (new_user) {
+          navigation.navigate("Join", default_nickname);
+        } else {
+          navigation.navigate("Home");
+        }
       } catch (err) {
         console.error("카카오 로그인 처리 실패: ", err);
         Alert.alert("로그인 오류", "카카오 로그인 중 문제가 발생했습니다.");

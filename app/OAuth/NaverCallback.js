@@ -32,14 +32,14 @@ export default function NaverCallback() {
       try {
         const response = await apiClient.post(
           NAVER_CALLBACK_URL,
-          {params: { code, state } }
+          { code, state }
         );
 
-        const { token, new_user , default_nickname} = response.data;
+        const { token, new_user, default_nickname } = response.data;
         await AsyncStorage.setItem("accessToken", token);
         
         if (new_user) {
-          navigation.navigate("Join", default_nickname);
+          navigation.navigate("Join", { default_nickname });
         } else {
           navigation.navigate("Home");
         }

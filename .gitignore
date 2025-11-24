@@ -40,7 +40,44 @@ app-example
 
 # generated native folders
 /ios
-/android
+# /android - Android 소스 코드는 커밋 필요 (HealthConnectModule 등)
 
 .idea
 .env
+
+# Android build
+android/app/build/
+android/build/
+android/.gradle/
+android/.externalNativeBuild/
+android/**/.cxx/
+android/captures/
+
+# Local configuration
+android/local.properties
+
+# Keystore files
+android/app/debug.keystore
+android/app/*.keystore
+android/app/*.jks
+
+# IDE files
+android/.idea/
+android/.settings/
+android/*.iml
+android/**/*.iml
+
+# System files
+android/.DS_Store
+android/**/.DS_Store
+android/Thumbs.db
+
+# Expo / React Native generated
+android/app/build/generated/
+android/app/build/intermediates/
+android/app/build/outputs/
+
+# Logs & temp
+android/**/*.log
+android/**/*.tmp
+

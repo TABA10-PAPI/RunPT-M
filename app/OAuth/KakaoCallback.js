@@ -31,14 +31,14 @@ export default function KakaoCallback() {
       try {
         const response = await apiClient.post(
           KAKAO_CALLBACK_URL,
-          {params: { code } }
+          { code }
         );
 
-        const { token, new_user } = response.data;
+        const { token, new_user, default_nickname } = response.data;
         await AsyncStorage.setItem("accessToken", token);
         
         if (new_user) {
-          navigation.navigate("Join", default_nickname);
+          navigation.navigate("Join", { default_nickname });
         } else {
           navigation.navigate("Home");
         }

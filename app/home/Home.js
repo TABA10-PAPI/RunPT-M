@@ -18,7 +18,6 @@ const silverMedal = require("@assets/rank/Silver I.png");
 
 // Arrow icons
 const arrowLeft = require("@assets/community/arrow_left.png");
-import HealthDataDisplay from "./components/HealthDataDisplay";
 
 export default function Home() {
   const navigation = useNavigation();

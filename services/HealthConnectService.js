@@ -20,7 +20,7 @@ class HealthConnectService {
   }
 
   /**
-   * 달리기 세션 가져오기
+   * 달리기 세션 가져오기 (페이스, 평균 심박, 총거리, 시간)
    * @param {number} days - 가져올 일수 (기본값: 7)
    * @returns {Promise<Array>} 달리기 세션 배열
    */
@@ -40,23 +40,12 @@ class HealthConnectService {
         };
 
         return {
-          id: session.id,
-          title: session.title,
-          startTime: new Date(session.startTimeEpoch),
-          endTime: new Date(session.endTimeEpoch),
-          startZoneId: session.startZoneId,
-          endZoneId: session.endZoneId,
           durationMinutes: session.durationMinutes,
           distanceMeters: session.distanceMeters,
           distanceKm: (session.distanceMeters / 1000).toFixed(2),
-          calories: session.calories,
           avgHeartRate: session.avgHeartRate,
-          maxHeartRate: session.maxHeartRate,
           avgPaceMinutesPerKm: session.avgPaceMinutesPerKm,
           avgPaceFormatted: formatPace(session.avgPaceMinutesPerKm),
-          avgSpeedKmh: session.avgSpeedKmh,
-          avgTemperature: session.avgTemperature,
-          avgRespiratoryRate: session.avgRespiratoryRate,
         };
       });
     } catch (error) {
@@ -66,86 +55,54 @@ class HealthConnectService {
   }
 
   /**
-   * 산소포화도 가져오기
+   * 테스트용: Health Connect 데이터 로드 및 콘솔 출력
    * @param {number} days - 가져올 일수 (기본값: 7)
-   * @returns {Promise<Array>} 산소포화도 기록 배열
    */
-  async getOxygenSaturation(days = 7) {
+  async testLoadHealthData(days = 7) {
     try {
-      if (!HealthConnectModule) {
-        throw new Error("Health Connect Module is not available");
-      }
-      const records = await HealthConnectModule.getOxygenSaturation(days);
-      return records.map((record) => ({
-        percentage: record.percentage,
-        time: new Date(record.timeEpoch),
-      }));
-    } catch (error) {
-      console.error("[HealthConnect] 산소포화도 가져오기 실패:", error);
-      throw error;
-    }
-  }
+      console.log("[HealthConnect] Health Connect 데이터 로드 시작");
 
-  /**
-   * 수면 기록 가져오기
-   * @param {number} days - 가져올 일수 (기본값: 7)
-   * @returns {Promise<Array>} 수면 세션 배열
-   */
-  async getSleepSessions(days = 7) {
-    try {
-      if (!HealthConnectModule) {
-        throw new Error("Health Connect Module is not available");
+      // 권한 요청
+      try {
+        await this.requestPermissions();
+        console.log("[HealthConnect] 권한 요청 성공");
+      } catch (error) {
+        if (error.code === "NEED_USER_ACTION") {
+          console.warn(
+            "[HealthConnect] 권한 필요: Health Connect 권한이 필요합니다."
+          );
+          return;
+        }
+        console.error("[HealthConnect] 권한 요청 실패:", error);
+        return;
       }
-      const sessions = await HealthConnectModule.getSleepSessions(days);
-      return sessions.map((session) => ({
-        id: session.id,
-        title: session.title,
-        startTime: new Date(session.startTimeEpoch),
-        endTime: new Date(session.endTimeEpoch),
-        durationMinutes: session.durationMinutes,
-        notes: session.notes,
-      }));
-    } catch (error) {
-      console.error("[HealthConnect] 수면 기록 가져오기 실패:", error);
-      throw error;
-    }
-  }
 
-  /**
-   * 컨디션 요약 가져오기 (오늘 기준)
-   * @returns {Promise<Object>} 컨디션 요약 객체
-   */
-  async getConditionSummary() {
-    try {
-      if (!HealthConnectModule) {
-        throw new Error("Health Connect Module is not available");
+      // 달리기 세션 가져오기
+      try {
+        const sessions = await this.getRunningSessions(days);
+        console.log("[HealthConnect] 달리기 세션 데이터:", JSON.stringify(sessions, null, 2));
+        console.log(`[HealthConnect] 총 ${sessions.length}개의 달리기 세션`);
+        
+        // 각 세션 상세 정보 로그
+        sessions.forEach((session, index) => {
+          console.log(`[HealthConnect] 세션 ${index + 1}:`, {
+            거리: `${session.distanceKm}km`,
+            시간: `${session.durationMinutes}분`,
+            평균_페이스: session.avgPaceFormatted,
+            평균_심박수: session.avgHeartRate > 0 ? `${Math.round(session.avgHeartRate)}bpm` : "없음",
+          });
+        });
+
+        return sessions;
+      } catch (error) {
+        console.error("[HealthConnect] 달리기 세션 가져오기 실패:", error);
+        throw error;
       }
-      const summary = await HealthConnectModule.getConditionSummary();
-      return {
-        totalSteps: summary.totalSteps,
-        avgHeartRate: summary.avgHeartRate,
-        oxygenSaturation: summary.oxygenSaturation,
-        totalSleepMinutes: summary.totalSleepMinutes,
-        latestSleepStart: summary.latestSleepStart
-          ? new Date(summary.latestSleepStart)
-          : null,
-        latestSleepEnd: summary.latestSleepEnd
-          ? new Date(summary.latestSleepEnd)
-          : null,
-        bodyTemperature: summary.bodyTemperature,
-        systolicBloodPressure: summary.systolicBloodPressure,
-        diastolicBloodPressure: summary.diastolicBloodPressure,
-        avgRespiratoryRate: summary.avgRespiratoryRate,
-        totalActiveCalories: summary.totalActiveCalories,
-        totalDistanceMeters: summary.totalDistanceMeters,
-        totalDistanceKm: (summary.totalDistanceMeters / 1000).toFixed(2),
-      };
     } catch (error) {
-      console.error("[HealthConnect] 컨디션 요약 가져오기 실패:", error);
+      console.error("[HealthConnect] Health Connect 데이터 로드 실패:", error);
       throw error;
     }
   }
 }
 
 export default new HealthConnectService();
-

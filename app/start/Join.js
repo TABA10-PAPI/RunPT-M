@@ -9,31 +9,59 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import apiClient from "@config/api";
 import {
   globalStyles,
   palette,
   typography,
 } from "@styles/globalStyles";
-export default function Join(defaultNickname) {
-  const [nickname, setNickname] = useState("");
+import { useNavigation , useRoute} from "@react-navigation/native";
+export default function Join() {
+
+  const route = useRoute();
+  const navigation = useNavigation();
+
+  const { uid, default_nickname } = route.params;
+  const [nickname, setNickname] = useState(default_nickname ?? "");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [age, setAge] = useState("");
 
-  const handleSubmit = () => {
+
+  const handleSubmit = async () => {
     if (!nickname || !height || !weight || !age) {
       Alert.alert("입력 필요", "모든 항목을 입력해 주세요.");
       return;
     }
 
     const data = {
-      nickname,
+      uid: Number(uid),
+      nickname: nickname,
+      age: Number(age),
       height: Number(height),
       weight: Number(weight),
-      age: Number(age),
     };
-    console.log("Join Data:", data);
-    Alert.alert("완료", "정보가 정상적으로 저장되었습니다.");
+    
+    try {
+      const response = await apiClient.post("/auth/join", data);
+      
+      Alert.alert("완료", "정보가 정상적으로 저장되었습니다.", [
+        {
+          text: "확인",
+          onPress: () => navigation.navigate("Home"),
+        }
+      ]);
+    } catch (err) {
+      const errorMessage = err.response?.data?.message 
+        || err.message 
+        || "정보 저장에 실패했습니다.";
+      
+      Alert.alert(
+        "오류", 
+        errorMessage + "\n\n네트워크 연결을 확인해주세요.",
+        [{ text: "확인" }]
+      );
+    }
   };
 
   return (
@@ -57,7 +85,6 @@ export default function Join(defaultNickname) {
               style={styles.input}
               value={nickname}
               onChangeText={setNickname}
-              defaultValue={defaultNickname}
             />
           </View>
 

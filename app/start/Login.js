@@ -5,33 +5,53 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  globalStyles,
-  palette,
-  typography,
-} from "@styles/globalStyles";
+import { globalStyles, palette, typography } from "@styles/globalStyles";
 import { KAKAO_AUTH_URL, NAVER_AUTH_URL } from "@app/OAuth/Oauth.js";
+import { startAsync } from "expo-auth-session";
+import { useNavigation } from "@react-navigation/native";
+import KakaoCallback from "../OAuth/KakaoCallback";
+
+
 const logo = require("@assets/logo.png");
 const kakaoImage = require("@assets/login/kakao_phone.png");
 const naverImage = require("@assets/login/naver_phone.png");
 
+
 export default function Login() {
-  const openOAuth = async (target) => {
-    try {
-      const url = target === "kakao" ? KAKAO_AUTH_URL : NAVER_AUTH_URL;
-      if (!url) {
-        Alert.alert("설정 오류", "OAuth URL이 설정되지 않았습니다.");
-        return;
-      }
-      await WebBrowser.openBrowserAsync(url);
-    } catch (error) {
-      console.error("OAuth open failed", error);
-      Alert.alert("로그인 오류", "소셜 로그인 페이지를 열 수 없습니다.");
-    }
-  };
+    const navigation = useNavigation();
+
+  // const openOAuth = async (target) => {
+  //   try {
+  //     const url = target === "kakao" ? KAKAO_AUTH_URL : NAVER_AUTH_URL;
+  //     if (!url) {
+  //       Alert.alert("설정 오류", "OAuth URL이 설정되지 않았습니다.");
+  //       return;
+  //     }
+  //     await WebBrowser.openBrowserAsync(url);
+  //   } catch (error) {
+  //     console.error("OAuth open failed", error);
+  //     Alert.alert("로그인 오류", "소셜 로그인 페이지를 열 수 없습니다.");
+  //   }
+  // };
+
+  // const openOAuth = async (target) => {
+  //   const authUrl = target  === "kakao" ? KAKAO_AUTH_URL : NAVER_AUTH_URL;
+  //   try {
+  //     const result = await startAsync({ authUrl });
+
+  //     if (result.type === "success") {
+  //       code =  result.params.code;
+  //       navigation.navigate("KakaoCallback", { code });
+  //     }
+  //   } catch (error) {
+  //     console.error("Kakao login failed", error);
+  //     Alert.alert("로그인 오류", "카카오 로그인 중 문제가 발생했습니다.");
+  //   }
+  //   return null;
+  // };
 
   return (
     <SafeAreaView style={globalStyles.safeArea}>
@@ -49,7 +69,7 @@ export default function Login() {
         <View style={styles.buttonWrapper}>
           <TouchableOpacity
             style={[styles.loginButton, styles.kakaoButton]}
-            onPress={() => openOAuth("kakao")}
+            onPress={() => navigation.navigate("KakaoCallback")}
             activeOpacity={0.8}
           >
             <Image source={kakaoImage} style={styles.buttonImage} />
@@ -105,7 +125,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     alignItems: "center",
     justifyContent: "center",
-    
   },
   kakaoButton: {
     backgroundColor: "#FEE500",

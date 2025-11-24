@@ -2,14 +2,14 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // API Base URL - 환경 변수로 관리하거나 실제 서버 URL로 변경
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const API_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 // Axios 인스턴스 생성
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
-  },
+  }
 });
 
 // 요청 인터셉터: 토큰 자동 추가

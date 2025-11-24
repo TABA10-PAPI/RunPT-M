@@ -24,9 +24,41 @@ export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
 
-  // Health Connect 테스트 (임시)
+  console.log("[Home] 🏠 Home 컴포넌트 렌더링");
+
+  // Health Connect 초기화
   useEffect(() => {
-    HealthConnectService.testLoadHealthData(7);
+    console.log("[Home] ⚙️ useEffect 훅 실행됨");
+    const initHealthConnect = async () => {
+      try {
+        console.log("\n========================================");
+        console.log("[Home] Health Connect 초기화 시작");
+        console.log("========================================");
+        
+        // 1. 권한 요청
+        const hasPermission = await HealthConnectService.requestPermissions();
+        
+        if (hasPermission) {
+          console.log("[Home] ✅ Health Connect 권한 허용됨");
+          // 권한이 있으면 데이터 로드
+          await HealthConnectService.testLoadHealthData(7);
+        } else {
+          console.warn("[Home] ⚠️ Health Connect 권한이 거부되었습니다.");
+        }
+      } catch (error) {
+        console.error("\n========================================");
+        console.error("[Home] ❌ Health Connect 초기화 실패");
+        console.error("[Home] 에러:", error);
+        console.error("[Home] 에러 메시지:", error.message);
+        console.error("[Home] 에러 스택:", error.stack);
+        console.error("========================================\n");
+      }
+    };
+    
+    // 함수 호출
+    console.log("[Home] ⚙️ useEffect 실행됨 - initHealthConnect() 호출 시도");
+    initHealthConnect();
+    console.log("[Home] ⚙️ initHealthConnect() 호출 완료 (비동기 함수이므로 즉시 반환)");
   }, []);
 
   // Mock data

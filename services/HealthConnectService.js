@@ -1,18 +1,33 @@
 import { NativeModules } from "react-native";
 
+// 디버깅: 등록된 모든 네이티브 모듈 확인
+console.log("[HealthConnect] 등록된 네이티브 모듈:", Object.keys(NativeModules));
+
 const { HealthConnectModule } = NativeModules;
+
+// 디버깅: HealthConnectModule 확인
+console.log("[HealthConnect] HealthConnectModule 존재 여부:", !!HealthConnectModule);
 
 class HealthConnectService {
   /**
    * Health Connect 권한 요청
-   * @returns {Promise<boolean>} 권한이 이미 허용되어 있으면 true
+   * @returns {Promise<boolean>} 권한이 이미 허용되어 있으면 true, 권한 요청 Intent 실행 후 false
    */
   async requestPermissions() {
     try {
       if (!HealthConnectModule) {
         throw new Error("Health Connect Module is not available");
       }
-      return await HealthConnectModule.requestPermissions();
+      const result = await HealthConnectModule.requestPermissions();
+      // 권한 요청 Intent가 실행된 경우, 잠시 후 다시 확인
+      if (result === false) {
+        console.log("[HealthConnect] 권한 요청 Intent 실행됨. 사용자가 권한을 허용할 때까지 대기...");
+        // 1초 후 다시 확인
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // 다시 권한 확인
+        return await HealthConnectModule.requestPermissions();
+      }
+      return result;
     } catch (error) {
       console.error("[HealthConnect] 권한 요청 실패:", error);
       throw error;

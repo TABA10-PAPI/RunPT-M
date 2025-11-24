@@ -37,7 +37,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer linking={linking}>
         <Stack.Navigator
-          initialRouteName="Community" //실행 시 화면(테스트 시 변경)
+          initialRouteName="Welcome" //실행 시 화면(테스트 시 변경)
           screenOptions={{
             headerShown: false,
             contentStyle: { backgroundColor: "#090909" },

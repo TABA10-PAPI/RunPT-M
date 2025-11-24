@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import axios from "axios";
 import { useEffect } from "react";
 import {
   ActivityIndicator,

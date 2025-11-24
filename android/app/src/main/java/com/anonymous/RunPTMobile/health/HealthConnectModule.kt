@@ -17,6 +17,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.Instant
+import android.app.Activity
+import android.content.Intent
 
 @ReactModule(name = HealthConnectModule.NAME)
 class HealthConnectModule(
@@ -60,11 +62,29 @@ class HealthConnectModule(
                 val granted = permissionController.getGrantedPermissions()
                 if (granted.containsAll(permissions)) {
                     promise.resolve(true)
-                } else {
-                    promise.reject("NEED_USER_ACTION", "권한 요청 UI를 Activity에서 처리해야 합니다.")
+                    return@launch
+                }
+
+                // 권한이 없으면 Activity에서 권한 요청 Intent 실행
+                val activity = currentActivity
+                if (activity == null) {
+                    promise.reject("NO_ACTIVITY", "Activity를 찾을 수 없습니다.")
+                    return@launch
+                }
+
+                val requestPermissionIntent = permissionController.createIntentForRequestPermissions(permissions)
+                activity.runOnUiThread {
+                    try {
+                        activity.startActivityForResult(requestPermissionIntent, 1001)
+                        // Intent 실행 후 Promise는 나중에 onActivityResult에서 처리
+                        // 여기서는 일단 성공으로 처리 (실제 권한 결과는 별도로 확인 필요)
+                        promise.resolve(false) // 권한 요청 Intent 실행됨
+                    } catch (e: Exception) {
+                        promise.reject("INTENT_ERROR", "권한 요청 Intent 실행 실패: ${e.message}")
+                    }
                 }
             } catch (e: Exception) {
-                promise.reject("PERMISSION_ERROR", e)
+                promise.reject("PERMISSION_ERROR", e.message ?: "권한 요청 실패")
             }
         }
     }

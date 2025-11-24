@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KAKAO_CALLBACK_URL } from "./Oauth";
+import apiClient from "@config/api";
 
 
 export default function KakaoCallback() {
@@ -28,10 +29,9 @@ export default function KakaoCallback() {
       }
 
       try {
-        const response = await axios.post(
+        const response = await apiClient.post(
           KAKAO_CALLBACK_URL,
-          { code },
-          { headers: { "Content-Type": "application/json" } }
+          {params: { code } }
         );
 
         const { token, new_user } = response.data;

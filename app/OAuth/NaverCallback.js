@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import apiClient from "@config/api";
 import { NAVER_CALLBACK_URL } from "./Oauth";
 
 
@@ -29,10 +30,9 @@ export default function NaverCallback() {
       }
 
       try {
-        const response = await axios.post(
+        const response = await apiClient.post(
           NAVER_CALLBACK_URL,
-          { code, state },
-          { headers: { "Content-Type": "application/json" } }
+          {params: { code, state } }
         );
 
         const { token, new_user , default_nickname} = response.data;

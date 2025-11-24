@@ -14,6 +14,7 @@ module.exports = function(api) {
             '@assets': './assets',
             '@app': './app',
             '@config': './config',
+            '@services': './services',
           },
         },
       ],

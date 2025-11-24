@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,10 +18,16 @@ const silverMedal = require("@assets/rank/Silver I.png");
 
 // Arrow icons
 const arrowLeft = require("@assets/community/arrow_left.png");
+import HealthConnectService from "@services/HealthConnectService";
 
 export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
+
+  // Health Connect 테스트 (임시)
+  useEffect(() => {
+    HealthConnectService.testLoadHealthData(7);
+  }, []);
 
   // Mock data
   const userInfo = {

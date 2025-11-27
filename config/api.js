@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // API Base URL - 환경 변수로 관리하거나 실제 서버 URL로 변경
-const API_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+const API_BASE_URL = "http://52.78.76.223:8080";
 
 // Axios 인스턴스 생성
 export const apiClient = axios.create({
@@ -28,8 +28,17 @@ apiClient.interceptors.request.use(
 
 // 응답 인터셉터: 에러 처리
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✅ API 응답 성공: ${response.config.method?.toUpperCase()} ${response.config.url}`);
+    return response;
+  },
   async (error) => {
+    const fullUrl = error.config ? `${error.config.baseURL}${error.config.url}` : "알 수 없음";
+    console.error(`❌ API 응답 실패: ${error.config?.method?.toUpperCase()} ${fullUrl}`);
+    console.error("상태 코드:", error.response?.status);
+    console.error("에러 메시지:", error.message);
+    console.error("에러 데이터:", error.response?.data);
+    
     if (error.response?.status === 401) {
       // 토큰 만료 시 로그인 페이지로 이동
       await AsyncStorage.removeItem("accessToken");

@@ -9,6 +9,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "@config/api";
 import {
   globalStyles,
@@ -44,6 +45,11 @@ export default function Join() {
     
     try {
       const response = await apiClient.post("/auth/join", data);
+      
+      // uid를 AsyncStorage에 저장
+      if (uid) {
+        await AsyncStorage.setItem("uid", String(uid));
+      }
       
       Alert.alert("완료", "정보가 정상적으로 저장되었습니다.", [
         {

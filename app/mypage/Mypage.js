@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,73 +6,185 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import ScreenHeader from "@components/ScreenHeader";
 import { palette } from "@styles/globalStyles";
+import apiClient from "@config/api";
 
 // Rank badges
 const silverMedal = require("@assets/rank/Silver I.png");
+const bronzeMedal1 = require("@assets/rank/Bronze I.png");
 const bronzeMedal2 = require("@assets/rank/Bronze II.png");
 const bronzeMedal3 = require("@assets/rank/Bronze III.png");
+const goldMedal1 = require("@assets/rank/Gold I.png");
+const goldMedal2 = require("@assets/rank/Gold II.png");
+const goldMedal3 = require("@assets/rank/Gold III.png");
+const platinumMedal1 = require("@assets/rank/Platinum I.png");
+const platinumMedal2 = require("@assets/rank/Platinum II.png");
+const platinumMedal3 = require("@assets/rank/Platinum III.png");
+const diamondMedal = require("@assets/rank/Diamond.png");
+const masterMedal = require("@assets/rank/Master.png");
+const challengerMedal = require("@assets/rank/Challenger.png");
 
 // Arrow icons
 const arrowLeft = require("@assets/community/arrow_left.png");
+
+// Tier 뱃지 매핑 함수
+const getTierBadge = (tierRank) => {
+  if (!tierRank) return null;
+  
+  const tierMap = {
+    "BRONZE I": bronzeMedal1,
+    "BRONZE II": bronzeMedal2,
+    "BRONZE III": bronzeMedal3,
+    "SILVER I": silverMedal,
+    "SILVER II": silverMedal,
+    "SILVER III": silverMedal,
+    "GOLD I": goldMedal1,
+    "GOLD II": goldMedal2,
+    "GOLD III": goldMedal3,
+    "PLATINUM I": platinumMedal1,
+    "PLATINUM II": platinumMedal2,
+    "PLATINUM III": platinumMedal3,
+    "DIAMOND": diamondMedal,
+    "MASTER": masterMedal,
+    "CHALLENGER": challengerMedal,
+  };
+  
+  return tierMap[tierRank] || null;
+};
+
+// 시간 변환 함수 (초 -> 분:초)
+const formatDuration = (seconds) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}M`;
+};
+
+// 페이스 변환 함수 (초 -> 분'초"/KM)
+const formatPace = (paceSeconds) => {
+  const mins = Math.floor(paceSeconds / 60);
+  const secs = paceSeconds % 60;
+  return `${mins}'${secs.toString().padStart(2, "0")}"/KM`;
+};
+
+// 날짜 포맷팅 함수
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+  const year = date.getFullYear();
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const dayName = days[date.getDay()];
+  
+  return `${year} ${month} ${day} ${dayName}`;
+};
 
 export default function Mypage() {
   const navigation = useNavigation();
   const route = useRoute();
 
-  // Mock data
-  const userInfo = {
-    name: "홍길동",
-    nickname: "달리는 뉴비",
-    height: "175cm",
-    weight: "75kg",
-    gender: "남",
-    age: "20대",
+  const [userInfo, setUserInfo] = useState(null);
+  const [tierInfo, setTierInfo] = useState(null);
+  const [recentRecords, setRecentRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchMypageData();
+  }, []);
+
+  const fetchMypageData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const uid = await AsyncStorage.getItem("uid");
+      
+      if (!uid) {
+        Alert.alert("오류", "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("📤 마이페이지 API 요청 시작");
+      console.log("요청 URL:", "http://52.78.76.223:8080/user/mypage");
+      console.log("요청 데이터:", { uid: parseInt(uid, 10) });
+      
+      const response = await apiClient.post("/user/mypage", {
+        uid: parseInt(uid, 10)
+      });
+
+      console.log("✅ 마이페이지 API 응답 성공");
+      console.log("응답 데이터:", response.data);
+
+      if (response.data.code === "SU") {
+        setUserInfo(response.data.user);
+        setTierInfo(response.data.tier);
+        setRecentRecords(response.data.recentRecords || []);
+      } else {
+        throw new Error(response.data.message || "데이터를 불러오는데 실패했습니다.");
+      }
+    } catch (err) {
+      console.error("마이페이지 데이터 로딩 실패: ", err);
+      setError(err.message || "데이터를 불러오는데 실패했습니다.");
+      Alert.alert("오류", "마이페이지 정보를 불러오는데 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const weeklyData = [
-    { day: "Sun", date: 23, completed: true, distance: "10.0KM" },
-    { day: "Mon", date: 24, completed: true, distance: "5.6KM" },
-    { day: "Tue", date: 25, completed: true, distance: "5.4KM" },
-    { day: "Wen", date: 26, completed: false, distance: null },
-    { day: "Thu", date: 27, completed: true, distance: "5.0KM" },
-    { day: "Fri", date: 28, completed: false, distance: null },
-    { day: "Sat", date: 29, completed: false, distance: null },
-  ];
+  // 성별 변환 함수
+  const formatGender = (gender) => {
+    return gender === "MALE" ? "남" : gender === "FEMALE" ? "여" : gender;
+  };
 
-  const completedDays = weeklyData.filter((day) => day.completed).length;
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.wrapper}>
+          <ScreenHeader title="My Page" />
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={palette.green} />
+            <Text style={styles.loadingText}>로딩 중...</Text>
+          </View>
+        </View>
+        <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
+      </SafeAreaView>
+    );
+  }
 
-  const runningHistory = [
-    {
-      date: "2025 11 27 Thu",
-      distance: "3KM",
-      time: "20M",
-      pace: "6'30\"/KM",
-    },
-    {
-      date: "2025 11 25 Tue",
-      distance: "3KM",
-      time: "20M",
-      pace: "6'30\"/KM",
-    },
-    {
-      date: "2025 11 24 Mon",
-      distance: "3KM",
-      time: "20M",
-      pace: "6'30\"/KM",
-    },
-    {
-      date: "2025 11 23 Sun",
-      distance: "3KM",
-      time: "20M",
-      pace: "6'30\"/KM",
-    },
-  ];
+  if (error || !userInfo) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.wrapper}>
+          <ScreenHeader title="My Page" />
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error || "데이터를 불러올 수 없습니다."}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={fetchMypageData}
+            >
+              <Text style={styles.retryButtonText}>다시 시도</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
+      </SafeAreaView>
+    );
+  }
+
+  // Tier 뱃지 가져오기
+  const shortTierBadge = tierInfo?.shortTierRank ? getTierBadge(tierInfo.shortTierRank) : null;
+  const longTierBadge = tierInfo?.longTierRank ? getTierBadge(tierInfo.longTierRank) : null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -90,8 +202,7 @@ export default function Mypage() {
               <View style={styles.profileImagePlaceholder} />
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{userInfo.name}</Text>
-              <Text style={styles.profileNickname}>{userInfo.nickname}</Text>
+              <Text style={styles.profileName}>{userInfo.nickname}</Text>
             </View>
           </View>
 
@@ -101,27 +212,30 @@ export default function Mypage() {
             <View style={styles.levelContainer}>
               <View style={styles.levelItem}>
                 <Text style={styles.levelText}>3KM</Text>
-                <Image
-                  source={silverMedal}
-                  style={styles.medal}
-                  resizeMode="contain"
-                />
+                {shortTierBadge ? (
+                  <Image
+                    source={shortTierBadge}
+                    style={styles.medal}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View style={styles.medalPlaceholder} />
+                )}
               </View>
               <View style={styles.levelItem}>
                 <Text style={styles.levelText}>5KM</Text>
-                <Image
-                  source={bronzeMedal2}
-                  style={styles.medal}
-                  resizeMode="contain"
-                />
+                {longTierBadge ? (
+                  <Image
+                    source={longTierBadge}
+                    style={styles.medal}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View style={styles.medalPlaceholder} />
+                )}
               </View>
               <View style={styles.levelItem}>
                 <Text style={styles.levelText}>10KM</Text>
-                <Image
-                  source={bronzeMedal3}
-                  style={styles.medal}
-                  resizeMode="contain"
-                />
               </View>
               <View style={styles.levelItem}>
                 <Text style={styles.levelText}>21KM</Text>
@@ -138,19 +252,19 @@ export default function Mypage() {
             <View style={styles.bodyInfoContainer}>
               <View style={styles.bodyInfoItem}>
                 <Text style={styles.bodyInfoLabel}>키</Text>
-                <Text style={styles.bodyInfoValue}>{userInfo.height}</Text>
+                <Text style={styles.bodyInfoValue}>{userInfo.height}cm</Text>
               </View>
               <View style={styles.bodyInfoItem}>
                 <Text style={styles.bodyInfoLabel}>체중</Text>
-                <Text style={styles.bodyInfoValue}>{userInfo.weight}</Text>
+                <Text style={styles.bodyInfoValue}>{userInfo.weight}kg</Text>
               </View>
               <View style={styles.bodyInfoItem}>
                 <Text style={styles.bodyInfoLabel}>성별</Text>
-                <Text style={styles.bodyInfoValue}>{userInfo.gender}</Text>
+                <Text style={styles.bodyInfoValue}>{formatGender(userInfo.gender)}</Text>
               </View>
               <View style={styles.bodyInfoItem}>
                 <Text style={styles.bodyInfoLabel}>나이</Text>
-                <Text style={styles.bodyInfoValue}>{userInfo.age}</Text>
+                <Text style={styles.bodyInfoValue}>{userInfo.age}세</Text>
               </View>
             </View>
           </View>
@@ -158,89 +272,34 @@ export default function Mypage() {
           {/* My Running History Section */}
           <View style={styles.card}>
             <Text style={styles.historyTitle}>My Running History</Text>
-
-            {/* This Week Section */}
-            <View style={styles.weekSection}>
-              <View style={styles.weekHeader}>
-                <TouchableOpacity>
-                  <Image
-                    source={arrowLeft}
-                    style={styles.arrowIcon}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-                <Text style={styles.weekTitle}>This Week</Text>
-                <TouchableOpacity>
-                  <Image
-                    source={arrowLeft}
-                    style={[styles.arrowIcon, styles.arrowRight]}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.weekDaysContainer}>
-                {weeklyData.map((day, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.dayItem,
-                      day.completed && styles.dayItemCompleted,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayDate,
-                        day.completed && styles.dayDateCompleted,
-                      ]}
-                    >
-                      {day.date}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.dayName,
-                        day.completed && styles.dayNameCompleted,
-                      ]}
-                    >
-                      {day.day}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.checkmark,
-                        day.completed && styles.checkmarkCompleted,
-                      ]}
-                    >
-                      ✓
-                    </Text>
-                    {day.completed && day.distance && (
-                      <Text style={styles.dayDistance}>{day.distance}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            </View>
           </View>
 
           {/* Running History List - Separate Cards */}
-          {runningHistory.map((record, index) => (
-            <View key={index} style={styles.historyCard}>
-              <Text style={styles.historyDate}>{record.date}</Text>
-              <View style={styles.historyMetrics}>
-                <View style={styles.historyMetricItem}>
-                  <Text style={styles.historyMetricLabel}>거리 </Text>
-                  <Text style={styles.historyMetricValue}>{record.distance}</Text>
-                </View>
-                <View style={styles.historyMetricItem}>
-                  <Text style={styles.historyMetricLabel}>시간 </Text>
-                  <Text style={styles.historyMetricValue}>{record.time}</Text>
-                </View>
-                <View style={styles.historyMetricItem}>
-                  <Text style={styles.historyMetricLabel}>페이스 </Text>
-                  <Text style={styles.historyMetricValue}>{record.pace}</Text>
+          {recentRecords.length > 0 ? (
+            recentRecords.map((record) => (
+              <View key={record.id} style={styles.historyCard}>
+                <Text style={styles.historyDate}>{formatDate(record.date)}</Text>
+                <View style={styles.historyMetrics}>
+                  <View style={styles.historyMetricItem}>
+                    <Text style={styles.historyMetricLabel}>거리 </Text>
+                    <Text style={styles.historyMetricValue}>{record.distance.toFixed(1)}KM</Text>
+                  </View>
+                  <View style={styles.historyMetricItem}>
+                    <Text style={styles.historyMetricLabel}>시간 </Text>
+                    <Text style={styles.historyMetricValue}>{formatDuration(record.durationSec)}</Text>
+                  </View>
+                  <View style={styles.historyMetricItem}>
+                    <Text style={styles.historyMetricLabel}>페이스 </Text>
+                    <Text style={styles.historyMetricValue}>{formatPace(record.pace)}</Text>
+                  </View>
                 </View>
               </View>
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>기록이 없습니다.</Text>
             </View>
-          ))}
+          )}
         </ScrollView>
       </View>
       <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
@@ -450,5 +509,51 @@ const styles = StyleSheet.create({
   historyMetricValue: {
     fontSize: 14,
     color: palette.white,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: palette.graySubtitle,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    color: palette.graySubtitle,
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: palette.green,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: palette.black,
+  },
+  medalPlaceholder: {
+    width: 40,
+    height: 40,
+  },
+  emptyContainer: {
+    backgroundColor: palette.gray,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: palette.graySubtitle,
   },
 });

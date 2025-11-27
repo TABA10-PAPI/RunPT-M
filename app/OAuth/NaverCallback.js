@@ -35,11 +35,16 @@ export default function NaverCallback() {
           { code, state }
         );
 
-        const { token, new_user, default_nickname } = response.data;
+        const { token, new_user, default_nickname, uid } = response.data;
         await AsyncStorage.setItem("accessToken", token);
         
+        // uid를 AsyncStorage에 저장 (있는 경우)
+        if (uid) {
+          await AsyncStorage.setItem("uid", String(uid));
+        }
+        
         if (new_user) {
-          navigation.navigate("Join", { default_nickname });
+          navigation.navigate("Join", { default_nickname, uid });
         } else {
           navigation.navigate("Home");
         }

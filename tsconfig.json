@@ -9,7 +9,8 @@
       "@styles/*": ["./styles/*"],
       "@assets/*": ["./assets/*"],
       "@app/*": ["./app/*"],
-      "@config/*": ["./config/*"]
+      "@config/*": ["./config/*"],
+      "@hooks/*" : ["./hooks/*"],
     }
   },
   "include": [

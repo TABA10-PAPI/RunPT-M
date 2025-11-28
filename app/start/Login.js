@@ -77,7 +77,7 @@ export default function Login() {
 
           <TouchableOpacity
             style={[styles.loginButton, styles.naverButton]}
-            onPress={() => openOAuth("naver")}
+            onPress={() => navigation.navigate("NaverCallback")}
             activeOpacity={0.8}
           >
             <Image source={naverImage} style={styles.buttonImage} />

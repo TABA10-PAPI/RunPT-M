@@ -12,13 +12,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "@config/api";
+import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
 import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import PostCard from "./components/PostCard";
-import FilterChip from "./components/FilterChip";
 import NewPostPopUp from "./components/NewPostPopUp";
 
 const iconNewPost = require("@assets/community/new_post.png");
@@ -84,33 +83,102 @@ const MOCK_POSTS = [
 export default function Community() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { uid } = useUid();
 
-  // 필터 선택 상태 관리
-  const [selectedFilter, setSelectedFilter] = useState("수지구 죽전동");
   const [isNewPostVisible, setIsNewPostVisible] = useState(false);
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
 
-  // TODO: 백엔드에서 필터 옵션 받아오기 (현재는 하드코딩)
-  // GET /community/filters 또는 유사한 API
-  const filterOptions = ["수지구 죽전동", "수지구 보정동"];
+  // 페이스 문자열을 파싱하여 분 단위로 변환
+  // 지원 형식: "6'30"", "6'30", "5:30", "5:30초"
+  const parsePaceToMinutes = (paceString) => {
+    if (!paceString || typeof paceString !== "string") {
+      return 0;
+    }
+    
+    // "6'30"" 또는 "6'30" 형식 파싱 (예: 6'30")
+    let match = paceString.match(/(\d+)'(\d+)"/);
+    if (match) {
+      const minutes = Number(match[1]) || 0;
+      const seconds = Number(match[2]) || 0;
+      return minutes + seconds / 60;
+    }
+    
+    // "6'30" 형식 파싱 (따옴표 없음)
+    match = paceString.match(/(\d+)'(\d+)/);
+    if (match) {
+      const minutes = Number(match[1]) || 0;
+      const seconds = Number(match[2]) || 0;
+      return minutes + seconds / 60;
+    }
+    
+    // "5:30" 또는 "5:30초" 형식 파싱
+    match = paceString.match(/(\d+):(\d+)/);
+    if (match) {
+      const minutes = Number(match[1]) || 0;
+      const seconds = Number(match[2]) || 0;
+      return minutes + seconds / 60;
+    }
+    
+    return 0;
+  };
+
+  // 거리와 페이스로부터 예상 소요시간 계산 (분)
+  const calculateDuration = (distance, pace) => {
+    const distanceNum = Number(distance) || 0;
+    const paceInMinutes = parsePaceToMinutes(pace);
+    
+    if (distanceNum <= 0 || paceInMinutes <= 0) {
+      return "";
+    }
+    
+    const totalMinutes = distanceNum * paceInMinutes;
+    return `${Math.round(totalMinutes)}분`;
+  };
 
   // API 응답을 PostCard 형식으로 변환
   const transformPostData = (apiPost) => {
+    // 댓글 개수: API 응답에 comments 필드가 있으면 그 길이를 사용하고, 
+    // 없으면 commentCount나 다른 필드를 확인, 모두 없으면 0
+    let commentCount = 0;
+    if (apiPost.comments && Array.isArray(apiPost.comments)) {
+      commentCount = apiPost.comments.length;
+    } else if (apiPost.commentCount !== undefined) {
+      commentCount = Number(apiPost.commentCount) || 0;
+    } else if (apiPost.comments !== undefined) {
+      // comments가 숫자일 수도 있음
+      commentCount = Number(apiPost.comments) || 0;
+    }
+
+    const distance = apiPost.distance || 0;
+    const pace = apiPost.targetpace || "";
+    const duration = calculateDuration(distance, pace);
+
+    // 디버깅: 페이스와 duration 계산 확인
+    if (pace) {
+      console.log("[Community] 페이스 파싱:", {
+        paceString: pace,
+        distance: distance,
+        parsedPace: parsePaceToMinutes(pace),
+        calculatedDuration: duration,
+      });
+    }
+
     return {
       id: String(apiPost.id || ""),
-      name: apiPost.nickname || "사용자", // TODO: tier 값 처리
+      name: apiPost.nickname || "사용자",
       location: apiPost.title || "",
       place: apiPost.startpoint || "",
       startTime: apiPost.starttime || "",
-      distance: `${apiPost.distance || 0}KM`,
-      duration: "", // API에 없음
-      pace: apiPost.targetpace || "",
+      distance: `${distance}KM`,
+      duration: duration,
+      pace: pace,
       likes: 0, // API에 없음
-      comments: apiPost.comments?.length || 0,
+      comments: commentCount,
       description: apiPost.shortinfo || "",
       timestamp: apiPost.createAt || "",
+      tier: apiPost.tier || "UNRANKED",
       // API 원본 데이터 유지
       apiData: apiPost,
     };
@@ -118,71 +186,108 @@ export default function Community() {
 
   // 게시물 목록 가져오기
   const fetchPosts = async () => {
+    if (!uid) {
+      console.log("[Community] uid가 없어서 게시물을 가져올 수 없습니다.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
-      const uid = await AsyncStorage.getItem("uid");
-      if (!uid) {
-        console.log("[Community] uid가 없어서 게시물을 가져올 수 없습니다.");
-        setIsLoading(false);
-        return;
-      }
 
-      // GET /community/home?uid={uid}
-      const response = await apiClient.get("/community/home", {
-        params: { uid },
+      // POST /community/home
+      const response = await apiClient.post("/community/home", {
+        uid: Number(uid),
       });
 
-      console.log("[Community] 게시물 목록 응답:", response.data);
+      console.log("[Community] API 응답 전체:", JSON.stringify(response.data, null, 2));
 
-      if (Array.isArray(response.data)) {
-        const transformedPosts = response.data.map(transformPostData);
-        setPosts(transformedPosts);
+      // 백엔드 명세서에 따르면 응답 형식: { headers: {}, body: { code, message, communitys: [...] }, statusCode: "OK", ... }
+      // 또는 직접 { code, message, communitys: [...] } 형식일 수도 있음
+      let communitys = null;
+      let code = null;
+      let message = null;
+
+      // 응답 구조 확인
+      if (response.data?.body) {
+        // body 안에 있는 경우
+        const bodyData = response.data.body;
+        communitys = bodyData.communitys;
+        code = bodyData.code;
+        message = bodyData.message;
+      } else if (response.data?.communitys) {
+        // 직접 communitys가 있는 경우
+        communitys = response.data.communitys;
+        code = response.data.code;
+        message = response.data.message;
+      }
+
+      console.log("[Community] 응답 분석:", {
+        code,
+        message,
+        communitysCount: Array.isArray(communitys) ? communitys.length : "not an array",
+        communitysType: typeof communitys,
+        hasBody: !!response.data?.body,
+        responseDataKeys: Object.keys(response.data || {}),
+        bodyKeys: response.data?.body ? Object.keys(response.data.body) : null,
+      });
+
+      // communitys가 배열인 경우 처리
+      if (Array.isArray(communitys)) {
+        if (communitys.length > 0) {
+          console.log("[Community] 게시물 변환 시작, 개수:", communitys.length);
+          // 첫 번째 게시물의 구조 확인 (댓글 개수 필드 확인용)
+          if (communitys[0]) {
+            console.log("[Community] 첫 번째 게시물 구조:", {
+              id: communitys[0].id,
+              keys: Object.keys(communitys[0]),
+              comments: communitys[0].comments,
+              commentCount: communitys[0].commentCount,
+              participateuser: communitys[0].participateuser,
+            });
+          }
+          const transformedPosts = communitys.map(transformPostData);
+          console.log("[Community] 변환된 게시물:", transformedPosts.length, "개");
+          console.log("[Community] 변환된 첫 번째 게시물 댓글 개수:", transformedPosts[0]?.comments);
+          setPosts(transformedPosts);
+        } else {
+          console.log("[Community] 게시물이 없습니다 (빈 배열)");
+          setPosts([]);
+        }
       } else {
-        console.error("[Community] 게시물 목록 형식이 올바르지 않습니다:", response.data);
+        console.warn("[Community] 게시물 목록을 가져올 수 없습니다.", {
+          code,
+          message,
+          communitysType: typeof communitys,
+          communitysIsArray: Array.isArray(communitys),
+          rawResponse: response.data,
+        });
+        setPosts([]);
       }
     } catch (error) {
       console.error("[Community] 게시물 목록 가져오기 실패:", error);
+      console.error("[Community] 에러 응답:", error.response?.data);
       Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
+      setPosts([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    if (uid) {
+      fetchPosts();
+    }
+  }, [uid]);
 
   const handleNewPostPress = () => {
     setIsNewPostVisible(true);
   };
 
-  const handlePostSubmit = async (postData) => {
-    try {
-      const uid = await AsyncStorage.getItem("uid");
-      if (!uid) {
-        Alert.alert("오류", "로그인이 필요합니다.");
-        return;
-      }
-
-      // POST /community/add
-      await apiClient.post("/community/add", {
-        uid: parseInt(uid, 10),
-        title: postData.title,
-        startpoint: postData.startpoint,
-        distance: postData.distance,
-        starttime: postData.starttime,
-        targetpace: postData.targetpace,
-        shortinfo: postData.shortinfo,
-      });
-
-      console.log("[Community] 게시물 작성 성공");
-      
-      // 게시물 목록 새로고침
-      await fetchPosts();
-    } catch (error) {
-      console.error("[Community] 게시물 작성 실패:", error);
-      Alert.alert("오류", error.response?.data?.message || "게시물 작성에 실패했습니다.");
-    }
+  const handlePostSubmit = async () => {
+    // NewPostPopUp에서 이미 API 호출을 했으므로, 여기서는 목록만 새로고침
+    await fetchPosts();
+    setIsNewPostVisible(false);
   };
 
   const handleSearch = (text) => {
@@ -195,7 +300,7 @@ export default function Community() {
   const renderPost = ({ item }) => <PostCard post={item} />;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <ScreenHeader
@@ -229,19 +334,6 @@ export default function Community() {
               />
             </TouchableOpacity>
           </View>
-        </View>
-
-        <View style={styles.filterRow}>
-          <Text style={styles.filterLabel}>지역</Text>
-
-          {filterOptions.map((filter) => (
-            <FilterChip
-              key={filter}
-              label={filter}
-              isActive={selectedFilter === filter}
-              onPress={() => setSelectedFilter(filter)}
-            />
-          ))}
         </View>
 
         {isLoading ? (
@@ -324,19 +416,6 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     tintColor: palette.grayLight,
-  },
-
-  filterRow: {
-    marginBottom: 16,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  filterLabel: {
-    color: palette.white,
-    marginRight: 12,
-    fontSize: 14,
-    fontWeight: "600",
-    ...typography.semibold,
   },
   loadingContainer: {
     flex: 1,

@@ -23,7 +23,10 @@ export default function CommentItem({ comment }) {
         <View style={styles.commentContent}>
           <View style={styles.commentHeader}>
             <Text style={styles.commentName}>{comment.name}</Text>
-            <Text style={styles.trophyIcon}>🏆</Text>
+            {/* TODO: 티어 이미지 추가 예정 */}
+            {comment.tier && (
+              <Text style={styles.tierBadge}>{comment.tier}</Text>
+            )}
             <Text style={styles.commentTimestamp}>{comment.timestamp}</Text>
           </View>
           <Text style={styles.commentText}>{comment.comment}</Text>
@@ -79,6 +82,17 @@ const styles = StyleSheet.create({
   trophyIcon: {
     fontSize: 14,
     marginRight: 8,
+  },
+  tierBadge: {
+    fontSize: 10,
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: palette.green,
+    borderRadius: 6,
+    color: palette.black,
+    fontWeight: "600",
+    ...typography.semibold,
   },
   commentTimestamp: {
     color: palette.grayLight,

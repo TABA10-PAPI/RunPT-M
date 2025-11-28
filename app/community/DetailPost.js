@@ -11,11 +11,12 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Keyboard,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "@config/api";
+import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
 import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
@@ -86,29 +87,108 @@ const MOCK_COMMENTS = [
 export default function DetailPost() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { uid } = useUid();
+  const insets = useSafeAreaInsets();
   const [commentText, setCommentText] = useState("");
   const [post, setPost] = useState(route.params?.post || MOCK_POST);
-  const [comments, setComments] = useState(route.params?.comments || MOCK_COMMENTS);
+  const [comments, setComments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const communityId = route.params?.post?.id || route.params?.post?.apiData?.id;
+  
+  // BottomNavigationBar 높이 계산 (paddingTop 6 + navItems paddingBottom 12 + navItem paddingVertical 16 + 아이콘 28 + paddingBottom 6 = 68)
+  const bottomNavBarHeight = 68 + insets.bottom;
+
+  // 키보드 show/hide 이벤트 처리
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener?.remove();
+      keyboardWillHideListener?.remove();
+    };
+  }, []);
+
+  // 페이스 문자열을 파싱하여 분 단위로 변환
+  // 지원 형식: "6'30"", "6'30", "5:30", "5:30초"
+  const parsePaceToMinutes = (paceString) => {
+    if (!paceString || typeof paceString !== "string") {
+      return 0;
+    }
+    
+    // "6'30"" 또는 "6'30" 형식 파싱 (예: 6'30")
+    let match = paceString.match(/(\d+)'(\d+)"/);
+    if (match) {
+      const minutes = Number(match[1]) || 0;
+      const seconds = Number(match[2]) || 0;
+      return minutes + seconds / 60;
+    }
+    
+    // "6'30" 형식 파싱 (따옴표 없음)
+    match = paceString.match(/(\d+)'(\d+)/);
+    if (match) {
+      const minutes = Number(match[1]) || 0;
+      const seconds = Number(match[2]) || 0;
+      return minutes + seconds / 60;
+    }
+    
+    // "5:30" 또는 "5:30초" 형식 파싱
+    match = paceString.match(/(\d+):(\d+)/);
+    if (match) {
+      const minutes = Number(match[1]) || 0;
+      const seconds = Number(match[2]) || 0;
+      return minutes + seconds / 60;
+    }
+    
+    return 0;
+  };
+
+  // 거리와 페이스로부터 예상 소요시간 계산 (분)
+  const calculateDuration = (distance, pace) => {
+    const distanceNum = Number(distance) || 0;
+    const paceInMinutes = parsePaceToMinutes(pace);
+    
+    if (distanceNum <= 0 || paceInMinutes <= 0) {
+      return "";
+    }
+    
+    const totalMinutes = distanceNum * paceInMinutes;
+    return `${Math.round(totalMinutes)}분`;
+  };
 
   // API 응답을 PostCard 형식으로 변환
   const transformPostData = (apiPost) => {
+    const distance = apiPost.distance || 0;
+    const pace = apiPost.targetpace || "";
+    const duration = calculateDuration(distance, pace);
+
     return {
       id: String(apiPost.id || ""),
       name: apiPost.nickname || "사용자",
       location: apiPost.title || "",
       place: apiPost.startpoint || "",
       startTime: apiPost.starttime || "",
-      distance: `${apiPost.distance || 0}KM`,
-      duration: "",
-      pace: apiPost.targetpace || "",
+      distance: `${distance}KM`,
+      duration: duration,
+      pace: pace,
       likes: 0,
       comments: apiPost.comments?.length || 0,
       description: apiPost.shortinfo || "",
       timestamp: apiPost.createAt || "",
+      tier: apiPost.tier || "UNRANKED",
       apiData: apiPost,
     };
   };
@@ -119,6 +199,7 @@ export default function DetailPost() {
       id: String(apiComment.id || ""),
       name: apiComment.nickname || "사용자",
       comment: apiComment.content || "",
+      tier: apiComment.tier || "UNRANKED",
       timestamp: apiComment.createAt
         ? new Date(apiComment.createAt)
             .toLocaleString("ko-KR", {
@@ -137,19 +218,17 @@ export default function DetailPost() {
   // 게시물 상세 정보 가져오기
   const fetchPostDetail = async () => {
     if (!communityId) {
-      console.log("[DetailPost] communityId가 없어서 상세 정보를 가져올 수 없습니다.");
       return;
     }
 
     try {
       setIsLoading(true);
-      // GET /community/detail?communityid={communityid}
-      const response = await apiClient.get("/community/detail", {
-        params: { communityid: parseInt(communityId, 10) },
+      // POST /community/detail
+      const response = await apiClient.post("/community/detail", {
+        id: Number(communityId),
       });
 
-      console.log("[DetailPost] 게시물 상세 정보 응답:", response.data);
-
+      // 응답 형식: {code, message, id, uid, nickname, tier, ...comments: [...]}
       const apiPost = response.data;
       const transformedPost = transformPostData(apiPost);
       setPost(transformedPost);
@@ -158,9 +237,10 @@ export default function DetailPost() {
       if (Array.isArray(apiPost.comments)) {
         const transformedComments = apiPost.comments.map(transformCommentData);
         setComments(transformedComments);
+      } else {
+        setComments([]);
       }
     } catch (error) {
-      console.error("[DetailPost] 게시물 상세 정보 가져오기 실패:", error);
       Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
     } finally {
       setIsLoading(false);
@@ -187,32 +267,26 @@ export default function DetailPost() {
       return;
     }
 
+    if (!uid) {
+      Alert.alert("오류", "로그인이 필요합니다.");
+      return;
+    }
+
     try {
       setIsSubmittingComment(true);
-      const uid = await AsyncStorage.getItem("uid");
-      if (!uid) {
-        Alert.alert("오류", "로그인이 필요합니다.");
-        return;
-      }
 
       // POST /community/comment
-      const response = await apiClient.post("/community/comment", {
-        communityid: parseInt(communityId, 10),
-        uid: parseInt(uid, 10),
+      await apiClient.post("/community/comment", {
+        communityid: Number(communityId),
+        uid: Number(uid),
         content: commentText.trim(),
       });
 
-      console.log("[DetailPost] 댓글 작성 응답:", response.data);
-
-      // 응답 데이터를 댓글 형식으로 변환
-      const newComment = transformCommentData(response.data);
-      setComments([...comments, newComment]);
       setCommentText("");
 
-      // 게시물 상세 정보 새로고침 (댓글 수 업데이트)
+      // 게시물 상세 정보 새로고침 (댓글 수 업데이트 및 새 댓글 표시)
       await fetchPostDetail();
     } catch (error) {
-      console.error("[DetailPost] 댓글 작성 실패:", error);
       Alert.alert("오류", error.response?.data?.message || "댓글 작성에 실패했습니다.");
     } finally {
       setIsSubmittingComment(false);
@@ -220,11 +294,11 @@ export default function DetailPost() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <View style={styles.container}>
           {/* 헤더 */}
@@ -261,12 +335,13 @@ export default function DetailPost() {
               <ActivityIndicator size="large" color={palette.green} />
             </View>
           ) : (
-            <>
+            <View style={styles.contentWrapper}>
               <PostCard post={post} variant="detail" disablePress={true} />
               <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
               >
                 {/* 댓글 섹션 */}
                 <View style={styles.commentsSection}>
@@ -276,11 +351,17 @@ export default function DetailPost() {
                   ))}
                 </View>
               </ScrollView>
-            </>
+            </View>
           )}
 
           {/* 댓글 입력 */}
-          <View style={styles.commentInputContainer}>
+          {!isLoading && (
+            <View style={[
+              styles.commentInputContainer, 
+              { 
+                paddingBottom: keyboardHeight > 0 ? 10 : bottomNavBarHeight,
+              }
+            ]}>
             <View style={styles.commentInputBox}>
               <View style={styles.inputProfileCircle}>
                 {/* TODO: 프로필 이미지 추가 필요 */}
@@ -315,9 +396,10 @@ export default function DetailPost() {
               </TouchableOpacity>
             </View>
           </View>
+          )}
         </View>
-        <BottomNavigationBar navigation={navigation} currentRoute="Community" />
       </KeyboardAvoidingView>
+      <BottomNavigationBar navigation={navigation} currentRoute="Community" />
     </SafeAreaView>
   );
 }
@@ -379,6 +461,9 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     tintColor: palette.white,
+  },
+  contentWrapper: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
@@ -546,9 +631,9 @@ const styles = StyleSheet.create({
   },
   commentInputContainer: {
     paddingVertical: 12,
-    paddingBottom: 100,
     borderTopWidth: 1,
     borderTopColor: palette.grayDark,
+    backgroundColor: palette.black,
   },
   commentInputBox: {
     flexDirection: "row",

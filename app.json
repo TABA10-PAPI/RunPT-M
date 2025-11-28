@@ -38,7 +38,8 @@
           }
         }
       ],
-      "./plugins/withKakao.js"
+      "./plugins/withKakao.js",
+      "./plugins/withNaver.js"
     ]
   }
 }

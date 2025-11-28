@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Alert,
   ScrollView,
@@ -6,7 +6,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import apiClient from "@config/api";
@@ -15,25 +17,19 @@ import {
   palette,
   typography,
 } from "@styles/globalStyles";
-import { useNavigation , useRoute} from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import FilterChip from "@app/community/components/FilterChip";
 import { useUid } from "@hooks/UseUid";
 export default function Join() {
   const route = useRoute();
   const navigation = useNavigation();
-  const { uid: uidFromHook, setUid } = useUid();
+  const { setUid } = useUid();
 
   const { uid: uidFromParams, default_nickname } = route.params || {};
   
-  // route.params에서 받은 uid가 있으면 저장
-  useEffect(() => {
-    if (uidFromParams) {
-      setUid(uidFromParams);
-    }
-  }, [uidFromParams, setUid]);
-
-  // uid는 route.params에서 받은 것을 우선 사용, 없으면 훅에서 가져온 것 사용
-  const uid = uidFromParams || uidFromHook;
+  // uid는 route.params에서 받은 것을 우선 사용
+  // Join 화면에서는 uid를 저장하지 않음 (Join 완료 후에만 저장)
+  const uid = uidFromParams;
 
   const [nickname, setNickname] = useState(default_nickname ?? "");
   const [height, setHeight] = useState("");
@@ -66,7 +62,7 @@ export default function Join() {
     };
     
     try {
-      const response = await apiClient.post("/auth/join", data);
+      const response = await apiClient.post("/user/join", data);
       
       // Join 완료 후에도 uid를 저장 (이미 저장되어 있을 수 있지만 안전하게)
       await setUid(uid);
@@ -92,11 +88,17 @@ export default function Join() {
 
   return (
     <SafeAreaView style={globalStyles.safeArea}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[globalStyles.container, styles.container]}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[globalStyles.container, styles.container]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <Text style={[styles.title, typography.bold]}>RunPT</Text>
         <Text style={[styles.subtitle, typography.bold]}>
           신체정보를 입력하고 {"\n"}내 몸에 맞는 러닝을 시작해보세요!
@@ -173,7 +175,8 @@ export default function Join() {
             완료
           </Text>
         </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

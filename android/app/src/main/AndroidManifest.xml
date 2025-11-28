@@ -26,6 +26,14 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="runptmobile"/>
         <data android:scheme="exp+runptmobile"/>
+        <data android:scheme="exp+runptmobile" android:host="expo-development-client"/>
+        <data android:scheme="com.anonymous.RunPTMobile" android:host="expo-development-client"/>
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="com.anonymous.RunPTMobile" android:host="naverlogin"/>
       </intent-filter>
     </activity>
     <activity android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity" android:exported="true">

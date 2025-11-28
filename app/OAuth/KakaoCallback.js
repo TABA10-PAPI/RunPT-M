@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Alert, ActivityIndicator, Text, View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { login } from "@react-native-seoul/kakao-login";
 import apiClient from "@config/api";
 import { KAKAO_CALLBACK_URL } from "./Oauth";
+import { useUid } from "@hooks/UseUid";
 
 export default function KakaoCallback() {
   const navigation = useNavigation();
+  const { setUid } = useUid();
 
   useEffect(() => {
     const handleLogin = async () => {
@@ -34,9 +35,9 @@ export default function KakaoCallback() {
         const { code, message, uid, fresh, nickname } = response.data;
         const default_nickname = nickname;
 
-        // uid를 AsyncStorage에 저장
+        // uid를 저장 (useUid 훅 사용)
         if (uid) {
-          await AsyncStorage.setItem("uid", String(uid));
+          await setUid(uid);
         }
 
         if (fresh) {
@@ -60,7 +61,7 @@ export default function KakaoCallback() {
     };
 
     handleLogin();
-  }, [navigation]);
+  }, [navigation, setUid]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -47,7 +47,10 @@ export default function PostCard({
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.nickname}>{post.name}</Text>
-            <Text style={styles.trophyIcon}>🏆</Text> {/*티어 아이콘*/}
+            {/* TODO: 티어 이미지 추가 예정 */}
+            {post.tier && (
+              <Text style={styles.tierBadge}>{post.tier}</Text>
+            )}
           </View>
           <Text style={styles.location}>{post.location}</Text>
         </View>
@@ -103,7 +106,7 @@ export default function PostCard({
 
           <View style={styles.statBlock}>
             <Text style={styles.statLabel}>시간</Text>
-            <Text style={styles.statValue}>{post.duration}</Text>
+            <Text style={styles.statValue}>{post.duration || "-"}</Text>
           </View>
 
           <View style={styles.statBlock}>
@@ -202,6 +205,17 @@ const styles = StyleSheet.create({
   trophyIcon: {
     fontSize: 16,
     marginLeft: 6,
+  },
+  tierBadge: {
+    fontSize: 12,
+    marginLeft: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: palette.green,
+    borderRadius: 8,
+    color: palette.black,
+    fontWeight: "600",
+    ...typography.semibold,
   },
   location: {
     color: palette.grayLight,

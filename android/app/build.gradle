@@ -96,7 +96,6 @@ android {
         versionName "1.0.0"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
-        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", "${findProperty('newArchEnabled') ?: false}"
     }
     signingConfigs {
         debug {
@@ -160,8 +159,7 @@ dependencies {
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
     def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true";
-    implementation "androidx.health.connect:connect-client:1.2.0-alpha02"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
+
     if (isGifEnabled) {
         // For animated gif support
         implementation("com.facebook.fresco:animated-gif:${expoLibs.versions.fresco.get()}")

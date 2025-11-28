@@ -9,7 +9,7 @@ const REDIRECT_URI_NAVER =
   process.env.EXPO_PUBLIC_NAVER_REDIRECT_URI;
 const STATE = "RANDOM_STRING";
 
-export const KAKAO_CALLBACK_URL = process.env.EXPO_PUBLIC_BASE_URL + "/auth/kakao";
+export const KAKAO_CALLBACK_URL = process.env.EXPO_PUBLIC_BASE_URL + "/user/kakao-login";
 export const NAVER_CALLBACK_URL = process.env.EXPO_PUBLIC_BASE_URL + "/auth/naver";
 
 export const KAKAO_AUTH_URL =

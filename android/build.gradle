@@ -2,25 +2,23 @@
 
 buildscript {
   repositories {
+        maven { url "https://devrepo.kakao.com/nexus/content/groups/public/" }
     google()
     mavenCentral()
-     maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' }
-     maven { url 'https://jitpack.io' }
   }
   dependencies {
     classpath('com.android.tools.build:gradle')
     classpath('com.facebook.react:react-native-gradle-plugin')
     classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
-    
   }
 }
 
 allprojects {
   repositories {
+    maven { url "https://devrepo.kakao.com/nexus/content/groups/public/" }
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
-    maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' }
   }
 }
 

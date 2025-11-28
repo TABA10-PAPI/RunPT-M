@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.RunPTMobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +37,8 @@
             "backgroundColor": "#090909"
           }
         }
-      ]
+      ],
+      "./plugins/withKakao.js"
     ]
   }
 }

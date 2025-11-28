@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Alert,
   ScrollView,
@@ -9,7 +9,6 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "@config/api";
 import {
   globalStyles,
@@ -17,23 +16,45 @@ import {
   typography,
 } from "@styles/globalStyles";
 import { useNavigation , useRoute} from "@react-navigation/native";
+import FilterChip from "@app/community/components/FilterChip";
+import { useUid } from "@hooks/UseUid";
 export default function Join() {
-
   const route = useRoute();
   const navigation = useNavigation();
+  const { uid: uidFromHook, setUid } = useUid();
 
-  const { uid, default_nickname } = route.params;
+  const { uid: uidFromParams, default_nickname } = route.params || {};
+  
+  // route.params에서 받은 uid가 있으면 저장
+  useEffect(() => {
+    if (uidFromParams) {
+      setUid(uidFromParams);
+    }
+  }, [uidFromParams, setUid]);
+
+  // uid는 route.params에서 받은 것을 우선 사용, 없으면 훅에서 가져온 것 사용
+  const uid = uidFromParams || uidFromHook;
+
   const [nickname, setNickname] = useState(default_nickname ?? "");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
 
 
   const handleSubmit = async () => {
-    if (!nickname || !height || !weight || !age) {
+    if (!uid) {
+      Alert.alert("오류", "사용자 정보를 불러올 수 없습니다.");
+      return;
+    }
+
+    if (!nickname || !height || !weight || !age || !gender) {
       Alert.alert("입력 필요", "모든 항목을 입력해 주세요.");
       return;
     }
+
+    // gender를 "M" 또는 "F"로 변환
+    const genderValue = gender === "Male" ? "M" : gender === "Female" ? "F" : gender;
 
     const data = {
       uid: Number(uid),
@@ -41,15 +62,14 @@ export default function Join() {
       age: Number(age),
       height: Number(height),
       weight: Number(weight),
+      gender: genderValue,
     };
     
     try {
       const response = await apiClient.post("/auth/join", data);
       
-      // uid를 AsyncStorage에 저장
-      if (uid) {
-        await AsyncStorage.setItem("uid", String(uid));
-      }
+      // Join 완료 후에도 uid를 저장 (이미 저장되어 있을 수 있지만 안전하게)
+      await setUid(uid);
       
       Alert.alert("완료", "정보가 정상적으로 저장되었습니다.", [
         {
@@ -129,8 +149,22 @@ export default function Join() {
               keyboardType="numeric"
             />
           </View>
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, typography.semibold]}>성별</Text>
+            <View style={styles.genderContainer}>
+              <FilterChip
+                label="Male"
+                isActive={gender === "Male"}
+                onPress={() => setGender("Male")}
+              />
+              <FilterChip
+                label="Female"
+                isActive={gender === "Female"}
+                onPress={() => setGender("Female")}
+              />
+            </View>
+          </View>
         </View>
-
         <TouchableOpacity
           style={[globalStyles.bigButton, styles.button]}
           onPress={handleSubmit}
@@ -176,6 +210,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  genderContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   input: {
     paddingVertical: 14,

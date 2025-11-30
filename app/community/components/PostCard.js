@@ -1,10 +1,12 @@
-import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { palette, typography } from "@styles/globalStyles";
+import { useUid } from "@hooks/UseUid";
+import apiClient from "@config/api";
+import { getTierImage } from "@utils/tierImages";
 
-const iconThumb = require("@assets/community/thumbs_up.png");
-const iconComment = require("@assets/community/comments.png");
+const iconComment = require("@assets/community/comment2.png");
 
 export default function PostCard({ 
   post, 
@@ -14,10 +16,75 @@ export default function PostCard({
   disablePress = false 
 }) {
   const navigation = useNavigation();
+  const { uid } = useUid();
+  const [isParticipated, setIsParticipated] = useState(post.isParticipated || false);
+  const [participateCount, setParticipateCount] = useState(post.participateuser || 0);
+
+  // post가 변경될 때 참가 상태 및 인원 수 업데이트
+  useEffect(() => {
+    setIsParticipated(post.isParticipated || false);
+    setParticipateCount(post.participateuser || 0);
+  }, [post.isParticipated, post.participateuser]);
 
   const handlePostPress = () => {
     if (!disablePress) {
       navigation.navigate("DetailPost", { post });
+    }
+  };
+
+  const handleParticipate = async (e) => {
+    e.stopPropagation();
+    
+    if (!uid) {
+      Alert.alert("오류", "로그인이 필요합니다.");
+      return;
+    }
+
+    const communityId = post.id || post.apiData?.id;
+    if (!communityId) {
+      Alert.alert("오류", "게시물 정보가 올바르지 않습니다.");
+      return;
+    }
+
+    const uidNumber = Number(uid);
+    if (isNaN(uidNumber) || uidNumber <= 0) {
+      Alert.alert("오류", "유효하지 않은 사용자 정보입니다.");
+      return;
+    }
+
+    try {
+      const newIsParticipated = !isParticipated;
+      const apiEndpoint = newIsParticipated 
+        ? "/community/participate" 
+        : "/community/participate/cancel";
+
+      // 백엔드 API 호출
+      const response = await apiClient.post(apiEndpoint, {
+        uid: uidNumber,
+        communityid: Number(communityId),
+      });
+
+      const responseData = response?.data || response;
+      
+      if (responseData.code === "SU") {
+        // 성공 시 상태 업데이트
+        setIsParticipated(newIsParticipated);
+        setParticipateCount(prev => 
+          newIsParticipated ? prev + 1 : Math.max(0, prev - 1)
+        );
+      } else {
+        // 실패 시 에러 메시지 표시
+        Alert.alert(
+          "오류", 
+          responseData.message || "참가 처리 중 문제가 발생했습니다."
+        );
+      }
+    } catch (error) {
+      console.error("[PostCard] 참가 오류:", error);
+      const errorMessage = error?.response?.data?.message 
+        || error?.message 
+        || "참가 처리 중 문제가 발생했습니다.";
+      Alert.alert("오류", errorMessage);
     }
   };
 
@@ -47,9 +114,12 @@ export default function PostCard({
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.nickname}>{post.name}</Text>
-            {/* TODO: 티어 이미지 추가 예정 */}
             {post.tier && (
-              <Text style={styles.tierBadge}>{post.tier}</Text>
+              <Image
+                source={getTierImage(post.tier)}
+                style={styles.tierImage}
+                resizeMode="contain"
+              />
             )}
           </View>
           <Text style={styles.location}>{post.location}</Text>
@@ -115,26 +185,29 @@ export default function PostCard({
           </View>
         </View>
 
-              {/* 좋아요 및 댓글 */}
+              {/* 참가 및 댓글 */}
               <View style={styles.bottomRow}>
                 <TouchableOpacity
-                  style={styles.actionRow}
+                  style={[
+                    styles.actionRow,
+                    styles.participateButton,
+                    isParticipated && styles.participateButtonActive
+                  ]}
                   activeOpacity={0.7}
-                  onPress={() => {
-                    // TODO: 백엔드로 좋아요 API 호출
-                    // POST /community/like 또는 유사한 API
-                    // Request: { communityid, uid }
-                    console.log("[PostCard] 좋아요 요청 (백엔드로 전송 필요):", {
-                      communityid: post.id,
-                    });
-                  }}
+                  onPress={handleParticipate}
                 >
-                  <Image
-                    source={iconThumb}
-                    style={styles.iconThumb}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.bottomText}>{post.likes}</Text>
+                  <Text style={[
+                    styles.participateText,
+                    isParticipated && styles.participateTextActive
+                  ]}>
+                    참가
+                  </Text>
+                  <Text style={[
+                    styles.bottomText,
+                    isParticipated && styles.participateCountActive
+                  ]}>
+                    {participateCount}
+                  </Text>
                 </TouchableOpacity>
 
           <TouchableOpacity
@@ -206,16 +279,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 6,
   },
-  tierBadge: {
-    fontSize: 12,
+  tierImage: {
+    width: 24,
+    height: 24,
     marginLeft: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    backgroundColor: palette.green,
-    borderRadius: 8,
-    color: palette.black,
-    fontWeight: "600",
-    ...typography.semibold,
   },
   location: {
     color: palette.grayLight,
@@ -329,19 +396,42 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     marginTop: 2,
   },
-  iconThumb: {
-    width: 17,
-    height: 19,
-  },
   iconComment: {
-    width: 16,
-    height: 16,
+    marginTop: 2,
+    width: 20,
+    height: 20,
+    tintColor: palette.grayLight,
+  },
+  participateButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: palette.grayLight,
+    backgroundColor: "transparent",
+  },
+  participateButtonActive: {
+    backgroundColor: palette.green,
+    borderColor: palette.green,
+  },
+  participateText: {
+    color: palette.grayLight,
+    fontSize: 13,
+    fontWeight: "600",
+    ...typography.semibold,
+  },
+  participateTextActive: {
+    color: palette.black,
   },
   bottomText: {
     color: palette.white,
     fontSize: 13,
     marginLeft: 6,
     fontWeight: "400",
+  },
+  participateCountActive: {
+    color: palette.black,
+    fontWeight: "600",
   },
   timestamp: {
     color: palette.grayLight,

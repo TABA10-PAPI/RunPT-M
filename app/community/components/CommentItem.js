@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { palette, typography } from "@styles/globalStyles";
+import { getTierImage } from "@utils/tierImages";
 
 // TODO: 이미지 추가 필요
 // const iconProfile = require('@assets/profile_placeholder.png'); // 프로필 사진
@@ -23,9 +24,12 @@ export default function CommentItem({ comment }) {
         <View style={styles.commentContent}>
           <View style={styles.commentHeader}>
             <Text style={styles.commentName}>{comment.name}</Text>
-            {/* TODO: 티어 이미지 추가 예정 */}
             {comment.tier && (
-              <Text style={styles.tierBadge}>{comment.tier}</Text>
+              <Image
+                source={getTierImage(comment.tier)}
+                style={styles.tierImage}
+                resizeMode="contain"
+              />
             )}
             <Text style={styles.commentTimestamp}>{comment.timestamp}</Text>
           </View>
@@ -79,20 +83,10 @@ const styles = StyleSheet.create({
     marginRight: 6,
     ...typography.semibold,
   },
-  trophyIcon: {
-    fontSize: 14,
-    marginRight: 8,
-  },
-  tierBadge: {
-    fontSize: 10,
+  tierImage: {
+    width: 20,
+    height: 20,
     marginLeft: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    backgroundColor: palette.green,
-    borderRadius: 6,
-    color: palette.black,
-    fontWeight: "600",
-    ...typography.semibold,
   },
   commentTimestamp: {
     color: palette.grayLight,

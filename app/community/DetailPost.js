@@ -24,7 +24,7 @@ import CommentItem from "./components/CommentItem";
 import PostCard from "./components/PostCard";
 
 const iconBack = require("@assets/community/arrow_left.png");
-const iconSend = require("@assets/community/sendbutton.png");
+const iconSend = require("@assets/community/sendButton.png");
 const iconMenu = require("@assets/community/menu.png");
 // TODO: 이미지 추가 필요
 // const iconProfile = require('@assets/profile_placeholder.png'); // 프로필 사진
@@ -670,8 +670,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sendIcon: {
-    width: 32,
-    height: 32,
+    width: 24,
+    height: 24,
+    tintColor: palette.green,
   },
   loadingContainer: {
     flex: 1,

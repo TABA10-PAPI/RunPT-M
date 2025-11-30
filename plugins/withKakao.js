@@ -127,11 +127,19 @@ const path = require("path");
     let stringsXml = fs.readFileSync(stringsXmlPath, "utf-8");
     const kakaoAppKey = process.env.EXPO_PUBLIC_KAKAO_API_KEY_MOBILE || "";
   
-    // kakao_app_key가 이미 있는지 확인
+    if (!kakaoAppKey) {
+      console.warn('EXPO_PUBLIC_KAKAO_API_KEY_MOBILE이 설정되지 않았습니다.');
+      return config;
+    }
+
+    // 주석 제거 (kakao_app_key 관련 주석)
+    stringsXml = stringsXml.replace(/<!--\s*kakao_app_key.*?-->/gs, '');
+    
+    // kakao_app_key가 이미 있는지 확인 (정규식으로 값 포함)
     if (stringsXml.includes('name="kakao_app_key"')) {
-      // 기존 값 업데이트
+      // 기존 값 업데이트 (여러 줄 주석이나 공백 처리)
       stringsXml = stringsXml.replace(
-        /<string name="kakao_app_key">.*?<\/string>/,
+        /<string\s+name="kakao_app_key">.*?<\/string>/s,
         `<string name="kakao_app_key">${kakaoAppKey}</string>`
       );
     } else {

@@ -22,8 +22,6 @@ import NewPostPopUp from "./components/NewPostPopUp";
 
 const iconNewPost = require("@assets/community/new_post.png");
 const iconSearch = require("@assets/community/search.png");
-// TODO: 이미지 추가 필요
-// const iconProfile = require('@assets/profile_placeholder.png'); // 프로필 사진
 
 const MOCK_POSTS = [
   {
@@ -174,11 +172,12 @@ export default function Community() {
       distance: `${distance}KM`,
       duration: duration,
       pace: pace,
-      likes: 0, // API에 없음
       comments: commentCount,
       description: apiPost.shortinfo || "",
       timestamp: apiPost.createAt || "",
       tier: apiPost.tier || "UNRANKED",
+      participateuser: apiPost.participateuser || 0,
+      isParticipated: false, // TODO: 백엔드에서 현재 사용자의 참가 여부를 확인해야 함
       // API 원본 데이터 유지
       apiData: apiPost,
     };
@@ -202,13 +201,12 @@ export default function Community() {
 
       console.log("[Community] API 응답 전체:", JSON.stringify(response.data, null, 2));
 
-      // 백엔드 명세서에 따르면 응답 형식: { headers: {}, body: { code, message, communitys: [...] }, statusCode: "OK", ... }
-      // 또는 직접 { code, message, communitys: [...] } 형식일 수도 있음
+      
       let communitys = null;
       let code = null;
       let message = null;
 
-      // 응답 구조 확인
+      
       if (response.data?.body) {
         // body 안에 있는 경우
         const bodyData = response.data.body;

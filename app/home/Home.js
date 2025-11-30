@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { palette, typography } from "@styles/globalStyles";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import { Ionicons } from "@expo/vector-icons";
+import readRunningData from "@services/HealthConnectService";
 
 // Rank badges
 const silverMedal = require("@assets/rank/Silver I.png");
@@ -22,6 +23,24 @@ const arrowLeft = require("@assets/community/arrow_left.png");
 export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
+
+  // Home 화면이 포커스될 때 HealthConnectService 실행
+  useEffect(() => {
+    const runHealthConnect = async () => {
+      try {
+        await readRunningData();
+      } catch (error) {
+        // 에러는 조용히 처리 (서비스 내부에서 이미 처리됨)
+      }
+    };
+    
+    // 화면 렌더링 후 약간의 지연을 두고 실행
+    const timer = setTimeout(() => {
+      runHealthConnect();
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Mock data
   const userInfo = {

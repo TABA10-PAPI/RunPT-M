@@ -11,6 +11,7 @@
       "@app/*": ["./app/*"],
       "@config/*": ["./config/*"],
       "@hooks/*" : ["./hooks/*"],
+      "@utils/*" : ["./utils/*"],
     }
   },
   "include": [

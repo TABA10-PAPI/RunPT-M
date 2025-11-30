@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
   Image,
   StyleSheet,
@@ -11,16 +10,10 @@ import {
   typography
 } from "@styles/globalStyles";
 import { SafeAreaView } from "react-native-safe-area-context";
-import readSampleData from "@services/HealthConnectService";
 
 const logo = require("@assets/logo.png");
 
 export default function Welcome({ navigation }) {
-  useEffect(() => {
-    // Welcome 화면이 마운트될 때 HealthConnectService 실행
-    readSampleData();
-  }, []);
-
   const goNext = () => {
     navigation.navigate("Login");
   };

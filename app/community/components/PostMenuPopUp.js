@@ -3,6 +3,10 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 
+/**
+ * 게시물 메뉴 팝업 컴포넌트
+ * - 게시물 수정/삭제 메뉴 (작성자만 표시)
+ */
 export default function PostMenuPopUp({ visible, onClose, onEdit, onDelete }) {
   if (!visible) {
     return null;

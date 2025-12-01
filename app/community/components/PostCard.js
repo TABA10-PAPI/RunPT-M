@@ -7,36 +7,40 @@ import { useUid } from "@hooks/UseUid";
 import apiClient from "@config/api";
 import { getTierImage } from "@utils/tierImages";
 
+/**
+ * 게시물 카드 컴포넌트
+ * - 게시물 정보 표시 (작성자, 장소, 시간, 거리, 페이스 등)
+ * - 참가 버튼 (일반 사용자) / 참가자 확인 버튼 (작성자)
+ * - 댓글 수 표시 및 상세 페이지 이동
+ */
 export default function PostCard({ 
   post, 
-  variant = "list", // "list" 또는 "detail"
+  variant = "list",
   containerStyle,
   cardStyle,
   disablePress = false,
-  onShowParticipants, // 참가자 확인 버튼 클릭 핸들러
-  onParticipateChange // 참가/참가 취소 후 콜백 (DetailPost에서 데이터 새로고침용)
+  onShowParticipants,
+  onParticipateChange
 }) {
   const navigation = useNavigation();
   const { uid } = useUid();
   const [isParticipated, setIsParticipated] = useState(post.isParticipated || false);
   const [participateCount, setParticipateCount] = useState(post.participateuser || 0);
-
-  // 작성자 확인: post.apiData?.uid와 현재 uid 비교
   const isAuthor = uid && post.apiData?.uid && Number(uid) === Number(post.apiData.uid);
 
-  // post가 변경될 때 참가 상태 및 인원 수 업데이트
   useEffect(() => {
-    // post prop이 변경되면 항상 최신 값으로 동기화
     setIsParticipated(post.isParticipated ?? false);
     setParticipateCount(post.participateuser ?? 0);
   }, [post.isParticipated, post.participateuser, post.id, post.comments]);
 
+  // 게시물 상세 페이지로 이동
   const handlePostPress = () => {
     if (!disablePress) {
       navigation.navigate("DetailPost", { post });
     }
   };
 
+  // 참가/참가 취소 처리
   const handleParticipate = async (e) => {
     e.stopPropagation();
     
@@ -68,26 +72,20 @@ export default function PostCard({
         communityid: Number(communityId),
       };
 
-      // 백엔드 API 호출
       const response = await apiClient.post(apiEndpoint, requestData);
 
       const responseData = response?.data || response;
       
       if (responseData.code === "SU") {
-        // DetailPost에서 데이터 새로고침을 위한 콜백 호출
-        // 콜백이 완료된 후 최신 데이터로 업데이트
         if (onParticipateChange) {
           await onParticipateChange();
-          // 콜백 후 post prop이 업데이트되면 useEffect에서 자동으로 동기화됨
         } else {
-          // Community.js에서는 로컬 상태만 업데이트
           setIsParticipated(newIsParticipated);
           setParticipateCount(prev => 
             newIsParticipated ? prev + 1 : Math.max(0, prev - 1)
           );
         }
       } else {
-        // 실패 시 에러 메시지 표시
         Alert.alert(
           "오류", 
           responseData.message || "참가 처리 중 문제가 발생했습니다."
@@ -106,14 +104,13 @@ export default function PostCard({
   const cardProps = disablePress ? {} : { onPress: handlePostPress, activeOpacity: 0.8 };
 
   return (
-    <View
+      <View
       style={[
         styles.postContainer,
         isDetailView && styles.postContainerDetail,
         containerStyle,
       ]}
     >
-      {/* 게시자 정보 헤더 */}
       <View style={styles.postHeader}>
        
 
@@ -131,13 +128,11 @@ export default function PostCard({
           <Text style={styles.location}>{post.location}</Text>
         </View>
 
-        {/* 우측 위치 태그 */}
         <View style={styles.locationTagContainer}>
           <Text style={styles.locationTag}>{post.location}</Text>
         </View>
       </View>
 
-      {/* 게시물 카드 */}
       <CardComponent
         style={[
           styles.card,
@@ -146,7 +141,6 @@ export default function PostCard({
         ]}
         {...cardProps}
       >
-        {/* 장소 및 출발시간 정보 */}
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
             <Text style={styles.infoIcon}>📍</Text>
@@ -165,7 +159,6 @@ export default function PostCard({
           </View>
         </View>
 
-        {/* 게시물 설명 */}
         <Text style={[
           styles.description,
           isDetailView && styles.descriptionDetail
@@ -173,7 +166,6 @@ export default function PostCard({
           {post.description || "원하는 코스 있으시면 맞추어 뛰고 싶습니다"}
         </Text>
 
-        {/* 통계 정보 (거리, 시간, 페이스) */}
         <View style={styles.statsRow}>
           <View style={styles.statBlock}>
             <Text style={styles.statLabel}>거리</Text>
@@ -191,11 +183,9 @@ export default function PostCard({
           </View>
         </View>
 
-              {/* 참가 및 댓글 */}
-              <View style={styles.bottomRow}>
-                {isAuthor ? (
-                  // 작성자일 경우: 참가자 확인 버튼 (DetailPost에서만 동작)
-                <TouchableOpacity
+        <View style={styles.bottomRow}>
+          {isAuthor ? (
+            <TouchableOpacity
                     style={[
                       styles.actionRow,
                       styles.participateButton,
@@ -205,10 +195,8 @@ export default function PostCard({
                     onPress={(e) => {
                       e.stopPropagation();
                       if (isDetailView && onShowParticipants) {
-                        // DetailPost에서만 참가자 확인 기능 사용
                         onShowParticipants();
                       } else {
-                        // Community.js에서는 상세 페이지로 이동
                         navigation.navigate("DetailPost", { post });
                       }
                     }}
@@ -226,9 +214,8 @@ export default function PostCard({
                       {participateCount}
                     </Text>
                   </TouchableOpacity>
-                ) : (
-                  // 일반 사용자일 경우: 참가 버튼
-                  <TouchableOpacity
+          ) : (
+            <TouchableOpacity
                     style={[
                       styles.actionRow,
                       styles.participateButton,
@@ -249,8 +236,8 @@ export default function PostCard({
                     ]}>
                       {participateCount}
                     </Text>
-                </TouchableOpacity>
-                )}
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={[styles.actionRow, styles.commentRow]}
@@ -264,7 +251,6 @@ export default function PostCard({
             <Text style={styles.bottomText}>{post.comments ?? 0}</Text>
           </TouchableOpacity>
           
-          {/* 작성 시간 (상세 페이지에서만 표시) */}
           {isDetailView && post.timestamp && (
             <Text style={styles.timestamp}>{post.timestamp}</Text>
           )}
@@ -279,10 +265,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   postContainerDetail: {
-    marginBottom: 0, // 상세 페이지에서는 하단 마진 제거
+    marginBottom: 0,
   },
-
-  // 게시자 정보 헤더
   postHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -292,8 +276,8 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: palette.grayMedium, // TODO: 이미지 추가 후 제거 또는 투명하게 변경
-    overflow: "hidden", // 이미지가 원형으로 잘리도록
+    backgroundColor: palette.grayMedium,
+    overflow: "hidden",
   },
   profileImage: {
     width: "100%",
@@ -380,10 +364,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   descriptionDetail: {
-    color: palette.white, // 상세 페이지에서는 흰색
+    color: palette.white,
   },
-
-  // 통계 정보
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -407,8 +389,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     ...typography.bold,
   },
-
-  // 좋아요 및 댓글
   bottomRow: {
     flexDirection: "row",
     alignItems: "center",

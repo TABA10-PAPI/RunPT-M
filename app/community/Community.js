@@ -20,7 +20,11 @@ import PostCard from "./components/PostCard";
 import NewPostPopUp from "./components/NewPostPopUp";
 import Icon from "react-native-vector-icons/Feather";
 
-
+/**
+ * 커뮤니티 게시물 목록 화면
+ * - 게시물 목록을 표시하고 새 게시물 작성 기능 제공
+ * - 검색 기능 (현재 미구현)
+ */
 export default function Community() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -31,14 +35,12 @@ export default function Community() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
 
-  // 페이스 문자열을 파싱하여 분 단위로 변환
-  // 지원 형식: "6'30"", "6'30", "5:30", "5:30초"
+  // 페이스 문자열을 분 단위로 변환 (예: "6'30"" -> 6.5분)
   const parsePaceToMinutes = (paceString) => {
     if (!paceString || typeof paceString !== "string") {
       return 0;
     }
     
-    // "6'30"" 또는 "6'30" 형식 파싱 (예: 6'30")
     let match = paceString.match(/(\d+)'(\d+)"/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -46,7 +48,6 @@ export default function Community() {
       return minutes + seconds / 60;
     }
     
-    // "6'30" 형식 파싱 (따옴표 없음)
     match = paceString.match(/(\d+)'(\d+)/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -54,7 +55,6 @@ export default function Community() {
       return minutes + seconds / 60;
     }
     
-    // "5:30" 또는 "5:30초" 형식 파싱
     match = paceString.match(/(\d+):(\d+)/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -65,7 +65,7 @@ export default function Community() {
     return 0;
   };
 
-  // 거리와 페이스로부터 예상 소요시간 계산 (분)
+  // 거리와 페이스로부터 예상 소요시간 계산
   const calculateDuration = (distance, pace) => {
     const distanceNum = Number(distance) || 0;
     const paceInMinutes = parsePaceToMinutes(pace);
@@ -78,7 +78,7 @@ export default function Community() {
     return `${Math.round(totalMinutes)}분`;
   };
 
-  // 현재 사용자의 참가 여부 확인 (참가자 목록에서 uid 확인)
+  // 현재 사용자의 게시물 참가 여부 확인
   const checkUserParticipation = async (communityId, currentUid) => {
     if (!communityId || !currentUid) {
       return false;
@@ -91,7 +91,6 @@ export default function Community() {
       });
 
       if (response.data?.code === "SU" && Array.isArray(response.data.participates)) {
-        // 참가자 목록에서 현재 uid가 있는지 확인
         return response.data.participates.some(
           (participant) => Number(participant.uid) === Number(currentUid)
         );
@@ -102,25 +101,12 @@ export default function Community() {
     }
   };
 
-  // API 응답을 PostCard 형식으로 변환
+  // API 응답 데이터를 PostCard 형식으로 변환
   const transformPostData = async (apiPost) => {
-    // 댓글 개수: API 응답에 comments 필드가 있으면 그 길이를 사용하고, 
-    // 없으면 commentCount나 다른 필드를 확인, 모두 없으면 0
-    let commentCount = 0;
-    if (apiPost.comments && Array.isArray(apiPost.comments)) {
-      commentCount = apiPost.comments.length;
-    } else if (apiPost.commentCount !== undefined) {
-      commentCount = Number(apiPost.commentCount) || 0;
-    } else if (apiPost.comments !== undefined) {
-      // comments가 숫자일 수도 있음
-      commentCount = Number(apiPost.comments) || 0;
-    }
-
     const distance = apiPost.distance || 0;
     const pace = apiPost.targetpace || "";
     const duration = calculateDuration(distance, pace);
-
-    // 참가 여부 확인
+    const commentCount = Number(apiPost.commentCount) || 0;
     const isParticipated = await checkUserParticipation(apiPost.id, uid);
 
     return {
@@ -138,7 +124,6 @@ export default function Community() {
       tier: apiPost.tier || "UNRANKED",
       participateuser: apiPost.participateuser || 0,
       isParticipated: isParticipated,
-      // API 원본 데이터 유지
       apiData: apiPost,
     };
   };
@@ -166,7 +151,6 @@ export default function Community() {
       }
 
       if (Array.isArray(communitys)) {
-        // 각 게시물에 대해 참가 여부를 확인하면서 변환
         const transformedPostsPromises = communitys.map(post => transformPostData(post));
         const transformedPosts = await Promise.all(transformedPostsPromises);
         setPosts(transformedPosts);
@@ -187,7 +171,6 @@ export default function Community() {
     }
   }, [uid]);
 
-  // 화면이 포커스될 때마다 게시물 목록 새로고침 (DetailPost에서 돌아올 때 동기화)
   useFocusEffect(
     React.useCallback(() => {
       if (uid) {
@@ -201,11 +184,11 @@ export default function Community() {
   };
 
   const handlePostSubmit = async () => {
-    // NewPostPopUp에서 이미 API 호출을 했으므로, 여기서는 목록만 새로고침
-      await fetchPosts();
+    await fetchPosts();
     setIsNewPostVisible(false);
   };
 
+  // 검색 기능 (현재 미구현)
   const handleSearch = (text) => {
     setSearchText(text);
     // TODO: 검색 기능은 백엔드 API가 준비되면 구현

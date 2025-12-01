@@ -2,6 +2,10 @@ import React from "react";
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
 import { palette, typography } from "@styles/globalStyles";
 
+/**
+ * 삭제 확인 팝업 컴포넌트
+ * - 게시물/댓글 삭제 전 확인 다이얼로그
+ */
 export default function DeleteConfirmPopUp({ visible, onClose, onConfirm, title, message }) {
   if (!visible) {
     return null;

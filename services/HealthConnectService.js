@@ -5,7 +5,12 @@ import {
   } from 'react-native-health-connect';
 import apiClient from '@config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-  
+
+/**
+ * Health Connect 서비스
+ * - Android Health Connect에서 러닝 데이터 읽기
+ * - 거리, 심박수, 시간 데이터를 가져와서 백엔드로 전송
+ */
 const readRunningData = async () => {
   try {
     // uid를 먼저 가져와서 uid별 마지막 처리 시간 관리
@@ -80,19 +85,14 @@ const readRunningData = async () => {
       return null;
     }
 
-    // uid별 마지막 처리 시간 가져오기
     const LAST_PROCESSED_TIME_KEY = `healthConnectLastProcessedTime_${uidNumber}`;
     let lastProcessedTime = await AsyncStorage.getItem(LAST_PROCESSED_TIME_KEY);
-    
-    // 마지막 처리 시간이 없으면 최근 24시간의 데이터만 가져오기
     const rightNow = new Date();
     let filterStartTime = null;
     
     if (lastProcessedTime) {
       filterStartTime = new Date(lastProcessedTime);
-      // 마지막 처리 시간 이후의 데이터만 가져오기 (저장되지 않은 기록만)
     } else {
-      // 처음 실행이면 최근 24시간만
       filterStartTime = new Date(rightNow.getTime() - 24 * 60 * 60 * 1000);
     }
 
@@ -105,7 +105,6 @@ const readRunningData = async () => {
     let distanceData = null;
     let heartRateData = null;
 
-    // Distance 읽기
     if (allowedRecordTypes.has('Distance')) {
       try {
         const result = await readRecords('Distance', { timeRangeFilter });
@@ -114,11 +113,9 @@ const readRunningData = async () => {
           distanceData = records;
         }
       } catch (err) {
-        // 에러 무시
       }
     }
 
-    // HeartRate 읽기
     if (allowedRecordTypes.has('HeartRate')) {
       try {
         const result = await readRecords('HeartRate', { timeRangeFilter });

@@ -18,6 +18,11 @@ import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
 import FilterChip from "./FilterChip";
 
+/**
+ * 새 게시물 작성 팝업
+ * - 게시물 작성 폼 (제목, 장소, 출발시간, 내용, 거리, 페이스, 성별 필터)
+ * - 거리와 페이스로부터 자동으로 소요시간 계산
+ */
 export default function NewPostPopUp({ visible, onClose, onSubmit }) {
   const { uid } = useUid();
   const [title, setTitle] = useState("");
@@ -37,7 +42,7 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
   ];
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 거리와 페이스로부터 예상 소요시간 계산 (분)
+  // 거리와 페이스로부터 예상 소요시간 자동 계산
   const calculatedDuration = useMemo(() => {
     const distanceNum = Number(distance) || 0;
     const paceMinNum = Number(paceMin) || 0;
@@ -47,25 +52,19 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
       return "";
     }
     
-    // 페이스를 분 단위로 변환 (예: 6'30" = 6 + 30/60 = 6.5분)
     const paceInMinutes = paceMinNum + paceSecNum / 60;
-    
-    // 총 소요시간 계산: 거리(km) × 페이스(분/km)
     const totalMinutes = distanceNum * paceInMinutes;
-    
-    // 소수점 반올림
     return Math.round(totalMinutes).toString();
   }, [distance, paceMin, paceSec]);
 
-  // duration을 자동 계산된 값으로 설정
   useEffect(() => {
     if (calculatedDuration) {
       setDuration(calculatedDuration);
     }
   }, [calculatedDuration]);
 
+  // 게시물 작성 제출
   const handleSubmit = async () => {
-    // 유효성 검사
     if (!title.trim() || !place.trim() || !startTime.trim() || !content.trim()) {
       Alert.alert("입력 오류", "모든 필드를 입력해주세요.");
       return;
@@ -81,7 +80,6 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
       return;
     }
 
-    // uid를 숫자로 변환
     const uidNumber = Number(uid);
     if (isNaN(uidNumber) || uidNumber <= 0) {
       Alert.alert("오류", "유효하지 않은 사용자 정보입니다. 다시 로그인해주세요.");
@@ -92,8 +90,6 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
 
     try {
       const targetpace = `${paceMin}'${paceSec}"`;
-
-      // 백엔드로 전송할 데이터 준비
       const requestData = {
         uid: uidNumber,
         title: title.trim(),
@@ -119,8 +115,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
     }
   };
 
+  // 팝업 닫기 및 폼 초기화
   const handleClose = () => {
-    // 폼 초기화
     setTitle("");
     setPlace("");
     setStartTime("");

@@ -18,6 +18,11 @@ import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
 import FilterChip from "./FilterChip";
 
+/**
+ * 게시물 수정 팝업
+ * - 기존 게시물 정보를 불러와서 수정 가능
+ * - 거리와 페이스로부터 자동으로 소요시간 계산
+ */
 export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
   const { uid } = useUid();
   const [title, setTitle] = useState("");
@@ -37,7 +42,6 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
     { label: "여성", value: "F" },
   ];
 
-  // post가 변경될 때 폼 데이터 초기화
   useEffect(() => {
     if (post && visible) {
       setTitle(post.location || post.apiData?.title || "");
@@ -45,12 +49,10 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
       setStartTime(post.startTime || post.apiData?.starttime || "");
       setContent(post.description || post.apiData?.shortinfo || "");
       
-      // distance 파싱 (예: "5KM" -> "5")
       const distanceStr = post.distance || post.apiData?.distance || "5";
       const distanceNum = distanceStr.toString().replace("KM", "").replace("km", "").trim();
       setDistance(distanceNum || "5");
       
-      // pace 파싱 (예: "6'30"" -> paceMin: "6", paceSec: "30")
       const paceStr = post.pace || post.apiData?.targetpace || "6'30\"";
       const paceMatch = paceStr.match(/(\d+)'(\d+)"/) || paceStr.match(/(\d+)'(\d+)/);
       if (paceMatch) {
@@ -62,7 +64,7 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
     }
   }, [post, visible]);
 
-  // 거리와 페이스로부터 예상 소요시간 계산 (분)
+  // 거리와 페이스로부터 예상 소요시간 자동 계산
   const calculatedDuration = useMemo(() => {
     const distanceNum = Number(distance) || 0;
     const paceMinNum = Number(paceMin) || 0;
@@ -83,6 +85,7 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
     }
   }, [calculatedDuration]);
 
+  // 게시물 수정 제출
   const handleSubmit = async () => {
     if (!title.trim() || !place.trim() || !startTime.trim() || !content.trim()) {
       Alert.alert("입력 오류", "모든 필드를 입력해주세요.");
@@ -138,6 +141,7 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
     }
   };
 
+  // 팝업 닫기 및 폼 초기화
   const handleClose = () => {
     onClose();
   };

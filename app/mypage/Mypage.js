@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import ScreenHeader from "@components/ScreenHeader";
@@ -31,9 +32,6 @@ const platinumMedal3 = require("@assets/rank/Platinum III.png");
 const diamondMedal = require("@assets/rank/Diamond.png");
 const masterMedal = require("@assets/rank/Master.png");
 const challengerMedal = require("@assets/rank/Challenger.png");
-
-// Arrow icons
-const arrowLeft = require("@assets/community/arrow_left.png");
 
 // Tier 뱃지 매핑 함수
 const getTierBadge = (tierRank) => {

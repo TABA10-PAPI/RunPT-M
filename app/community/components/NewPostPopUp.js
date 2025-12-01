@@ -9,17 +9,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
 import FilterChip from "./FilterChip";
-
-const iconX = require("@assets/community/X.png");
-const iconMenuSeparator = require("@assets/community/Menu_Separator.png");
 
 export default function NewPostPopUp({ visible, onClose, onSubmit }) {
   const { uid } = useUid();
@@ -182,12 +179,7 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
               onPress={handleClose}
               activeOpacity={0.7}
             >
-              <Image
-                source={iconX}
-                style={styles.closeIcon}
-                tintColor={palette.white}
-                resizeMode="contain"
-              />
+              <Icon name="x-circle" size={24} color={palette.white} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>글 작성하기</Text>
             <TouchableOpacity
@@ -203,11 +195,7 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
             </TouchableOpacity>
 
           </View>
-          <Image
-            source={iconMenuSeparator}
-            style={styles.separator}
-            resizeMode="contain"
-          />
+          <View style={styles.separator} />
 
 
           <ScrollView
@@ -390,16 +378,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeIcon: {
-    width: 24,
-    height: 24,
-  },
   separator: {
-    width: 400,
-    height: 10,
+    flex: 17,
+    borderBottomWidth: 1,
+    width: "100%",
+    borderBottomColor: '#E1E2E4',
     marginBottom: 10,
-    tintColor: palette.white,
-    alignSelf: "center",
   },
   headerTitle: {
     fontSize: 18,

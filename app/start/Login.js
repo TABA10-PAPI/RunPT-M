@@ -1,6 +1,4 @@
-import * as WebBrowser from "expo-web-browser";
 import {
-  Alert,
   Image,
   StyleSheet,
   Text,
@@ -9,10 +7,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { globalStyles, palette, typography } from "@styles/globalStyles";
-import { KAKAO_AUTH_URL, NAVER_AUTH_URL } from "@app/OAuth/Oauth.js";
-import { startAsync } from "expo-auth-session";
 import { useNavigation } from "@react-navigation/native";
-import KakaoCallback from "../OAuth/KakaoCallback";
 
 
 const logo = require("@assets/logo.png");

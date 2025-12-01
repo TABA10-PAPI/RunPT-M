@@ -1,9 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import { getTierImage } from "@utils/tierImages";
-
-const iconX = require("@assets/community/X.png");
 
 export default function CommentItem({ comment, onDelete, canDelete = false }) {
   return (
@@ -27,20 +26,15 @@ export default function CommentItem({ comment, onDelete, canDelete = false }) {
             )}
             <View style={styles.headerRight}>
               <Text style={styles.commentTimestamp}>{comment.timestamp}</Text>
-              {canDelete && onDelete && (
+              {canDelete && onDelete ? (
                 <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={() => onDelete(comment)}
                   activeOpacity={0.7}
                 >
-                  <Image
-                    source={iconX}
-                    style={styles.deleteIcon}
-                    tintColor={palette.grayLight}
-                    resizeMode="contain"
-                  />
+                  <Icon name="x-circle" size={12} color={palette.grayLight} />
                 </TouchableOpacity>
-              )}
+              ) : null}
             </View>
           </View>
           <Text style={styles.commentText}>{comment.comment}</Text>
@@ -119,10 +113,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 2,
-  },
-  deleteIcon: {
-    width: 12,
-    height: 12,
   },
 });
 

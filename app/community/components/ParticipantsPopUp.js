@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import apiClient from "@config/api";
 import { getTierImage } from "@utils/tierImages";
-
-const iconX = require("@assets/community/X.png");
-const iconMenuSeparator = require("@assets/community/Menu_Separator.png");
 
 export default function ParticipantsPopUp({ visible, onClose, communityId }) {
   const [participants, setParticipants] = useState([]);
@@ -25,16 +23,8 @@ export default function ParticipantsPopUp({ visible, onClose, communityId }) {
     try {
       setIsLoading(true);
       
-      // TODO: 백엔드 API 명세 확인 필요
-      // 예상: POST /community/participants 또는 GET /community/{id}/participants
-      // 임시로 빈 배열 표시 (백엔드 API 연동 필요)
       
-      // const response = await apiClient.post("/community/participants", {
-      //   communityid: Number(communityId),
-      // });
-      // setParticipants(response.data?.participants || []);
       
-      // 임시: 빈 목록
       setParticipants([]);
     } catch (error) {
       console.error("[ParticipantsPopUp] 참가자 목록 가져오기 실패:", error);
@@ -69,20 +59,11 @@ export default function ParticipantsPopUp({ visible, onClose, communityId }) {
               onPress={onClose}
               activeOpacity={0.7}
             >
-              <Image
-                source={iconX}
-                style={styles.closeIcon}
-                tintColor={palette.white}
-                resizeMode="contain"
-              />
+              <Icon name="x-circle" size={20} color={palette.white} />
             </TouchableOpacity>
           </View>
           
-          <Image
-            source={iconMenuSeparator}
-            style={styles.separator}
-            resizeMode="contain"
-          />
+          <View style={styles.separator} />
 
           {isLoading ? (
             <View style={styles.loadingContainer}>
@@ -158,15 +139,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeIcon: {
-    width: 20,
-    height: 20,
-  },
   separator: {
+    flex: 17,
+    borderBottomWidth: 1,
     width: "100%",
-    height: 10,
+    borderBottomColor: '#E1E2E4',
     marginBottom: 16,
-    tintColor: palette.white,
   },
   scrollView: {
     maxHeight: 400,

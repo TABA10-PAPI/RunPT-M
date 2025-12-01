@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
 import { palette } from "@styles/globalStyles";
@@ -18,9 +18,8 @@ import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import PostCard from "./components/PostCard";
 import NewPostPopUp from "./components/NewPostPopUp";
+import Icon from "react-native-vector-icons/Feather";
 
-const iconNewPost = require("@assets/community/new_post.png");
-const iconSearch = require("@assets/community/search.png");
 
 export default function Community() {
   const navigation = useNavigation();
@@ -119,10 +118,10 @@ export default function Community() {
 
   // 게시물 목록 가져오기
   const fetchPosts = async () => {
-    if (!uid) {
-      setIsLoading(false);
-      return;
-    }
+      if (!uid) {
+        setIsLoading(false);
+        return;
+      }
 
     try {
       setIsLoading(true);
@@ -159,13 +158,22 @@ export default function Community() {
     }
   }, [uid]);
 
+  // 화면이 포커스될 때마다 게시물 목록 새로고침 (DetailPost에서 돌아올 때 동기화)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (uid) {
+        fetchPosts();
+      }
+    }, [uid])
+  );
+
   const handleNewPostPress = () => {
     setIsNewPostVisible(true);
   };
 
   const handlePostSubmit = async () => {
     // NewPostPopUp에서 이미 API 호출을 했으므로, 여기서는 목록만 새로고침
-    await fetchPosts();
+      await fetchPosts();
     setIsNewPostVisible(false);
   };
 
@@ -188,7 +196,7 @@ export default function Community() {
                 onPress={handleNewPostPress}
                 activeOpacity={0.7}
               >
-                <Image source={iconNewPost} style={styles.newPostIcon} />
+                <Icon name="edit" size={15} color={palette.green} />
               </TouchableOpacity>
             }
           />
@@ -204,11 +212,7 @@ export default function Community() {
               onChangeText={handleSearch}
             />
             <TouchableOpacity style={styles.searchIconContainer}>
-              <Image
-                source={iconSearch}
-                style={styles.searchIconImage}
-                resizeMode="contain"
-              />
+              <Icon name="search" size={15} color={palette.grayLight} />
             </TouchableOpacity>
           </View>
         </View>
@@ -255,12 +259,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  newPostIcon: {
-    width: 14.79,
-    height: 14.79,
-    tintColor: palette.green,
-  },
-
   searchRow: {
     marginBottom: 16,
     flexDirection: "row",
@@ -287,11 +285,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     justifyContent: "center",
     alignItems: "center",
-  },
-  searchIconImage: {
-    width: 18,
-    height: 18,
-    tintColor: palette.grayLight,
   },
   loadingContainer: {
     flex: 1,

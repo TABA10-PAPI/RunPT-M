@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Image,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Feather";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
@@ -26,10 +26,6 @@ import PostMenuPopUp from "./components/PostMenuPopUp";
 import EditPostPopUp from "./components/EditPostPopUp";
 import DeleteConfirmPopUp from "./components/DeleteConfirmPopUp";
 import ParticipantsPopUp from "./components/ParticipantsPopUp";
-
-const iconBack = require("@assets/community/arrow_left.png");
-const iconSend = require("@assets/community/sendButton.png");
-const iconMenu = require("@assets/community/menu.png");
 // TODO: 이미지 추가 필요
 // const iconProfile = require('@assets/profile_placeholder.png'); // 프로필 사진
 
@@ -362,22 +358,16 @@ export default function DetailPost() {
 
   // 댓글 삭제
   const handleDeleteComment = async () => {
-    if (!commentToDelete || !uid) {
+    if (!commentToDelete || !uid || !communityId) {
       return;
     }
 
     try {
-      // TODO: 댓글 삭제 API 호출 (백엔드 명세 확인 필요)
-      // 예상: DELETE /community/comment/{id} 또는 POST /community/comment/delete
-      try {
-        await apiClient.delete(`/community/comment/${commentToDelete.id}`);
-      } catch (deleteError) {
-        // DELETE가 실패하면 POST로 시도
-        await apiClient.post("/community/comment/delete", { 
-          id: Number(commentToDelete.id),
-          uid: Number(uid)
-        });
-      }
+      // POST /community/comment/delete (명세서 기준)
+      await apiClient.post("/community/comment/delete", { 
+        uid: Number(uid),
+        communityid: Number(communityId)
+      });
       
       await fetchPostDetail();
       setCommentToDelete(null);
@@ -404,11 +394,7 @@ export default function DetailPost() {
                   onPress={handleBack}
                   activeOpacity={0.7}
                 >
-                  <Image
-                    source={iconBack}
-                    style={styles.backIcon}
-                    resizeMode="contain"
-                  />
+                  <Icon name="arrow-left" size={24} color={palette.white} />
                 </TouchableOpacity>
               }
               rightContent={
@@ -418,11 +404,7 @@ export default function DetailPost() {
                     activeOpacity={0.7}
                     onPress={() => setIsMenuPopupVisible(true)}
                   >
-                    <Image
-                      source={iconMenu}
-                      style={styles.menuIcon}
-                      resizeMode="contain"
-                    />
+                    <Icon name="menu" size={24} color={palette.white} />
                   </TouchableOpacity>
                 ) : null
               }
@@ -440,6 +422,7 @@ export default function DetailPost() {
                 variant="detail"
                 disablePress={true}
                 onShowParticipants={() => setIsParticipantsPopupVisible(true)}
+                onParticipateChange={fetchPostDetail}
               />
               <ScrollView
                 style={styles.scrollView}
@@ -451,14 +434,11 @@ export default function DetailPost() {
                 <View style={styles.commentsSection}>
                   <Text style={styles.commentsHeader}>댓글 {comments.length}</Text>
                   {comments.map((comment) => {
-                    // 댓글 작성자 확인
-                    const isCommentAuthor = uid && comment.apiData?.uid && 
-                      Number(uid) === Number(comment.apiData.uid);
                     return (
                       <CommentItem
                         key={comment.id}
                         comment={comment}
-                        canDelete={isCommentAuthor}
+                        canDelete={isAuthor}
                         onDelete={(comment) => {
                           setCommentToDelete(comment);
                           setIsCommentDeleteConfirmVisible(true);
@@ -480,14 +460,6 @@ export default function DetailPost() {
               }
             ]}>
             <View style={styles.commentInputBox}>
-              <View style={styles.inputProfileCircle}>
-                {/* TODO: 프로필 이미지 추가 필요 */}
-                {/* <Image
-                  source={require('@assets/profile_placeholder.png')}
-                  style={styles.inputProfileImage}
-                  resizeMode="cover"
-                /> */}
-              </View>
               <TextInput
                 placeholder={`${post.name} 님에게 댓글`}
                 placeholderTextColor={palette.grayPlaceholder}
@@ -504,11 +476,7 @@ export default function DetailPost() {
                 {isSubmittingComment ? (
                   <ActivityIndicator size="small" color={palette.green} />
                 ) : (
-                  <Image
-                    source={iconSend}
-                    style={styles.sendIcon}
-                    resizeMode="contain"
-                  />
+                  <Icon name="send" size={24} color={palette.green} />
                 )}
               </TouchableOpacity>
             </View>
@@ -595,11 +563,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  backIcon: {
-    width: 24,
-    height: 24,
-    tintColor: palette.white,
-  },
   backText: {
     fontSize: 24,
     color: palette.white,
@@ -617,11 +580,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-  },
-  menuIcon: {
-    width: 24,
-    height: 24,
-    tintColor: palette.white,
   },
   contentWrapper: {
     flex: 1,
@@ -829,11 +787,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     justifyContent: "center",
     alignItems: "center",
-  },
-  sendIcon: {
-    width: 24,
-    height: 24,
-    tintColor: palette.green,
   },
   loadingContainer: {
     flex: 1,

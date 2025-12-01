@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,9 +17,6 @@ import readRunningData from "@services/HealthConnectService";
 
 // Rank badges
 const silverMedal = require("@assets/rank/Silver I.png");
-
-// Arrow icons
-const arrowLeft = require("@assets/community/arrow_left.png");
 
 export default function Home() {
   const navigation = useNavigation();

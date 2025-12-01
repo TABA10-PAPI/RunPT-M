@@ -9,17 +9,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
 import FilterChip from "./FilterChip";
-
-const iconX = require("@assets/community/X.png");
-const iconMenuSeparator = require("@assets/community/Menu_Separator.png");
 
 export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
   const { uid } = useUid();
@@ -114,8 +111,7 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
       const targetpace = `${paceMin}'${paceSec}"`;
       const communityId = post.id || post.apiData?.id;
 
-      // TODO: 게시물 수정 API 호출 (백엔드 명세 확인 필요)
-      // 예상: PUT /community/update 또는 POST /community/update
+      
       const requestData = {
         id: Number(communityId),
         uid: uidNumber,
@@ -128,7 +124,7 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
         shortinfo: content,
       };
 
-      // 임시: API 엔드포인트는 백엔드 명세에 따라 수정 필요
+      
       await apiClient.post("/community/update", requestData);
       
       onSubmit();
@@ -176,12 +172,7 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
               onPress={handleClose}
               activeOpacity={0.7}
             >
-              <Image
-                source={iconX}
-                style={styles.closeIcon}
-                tintColor={palette.white}
-                resizeMode="contain"
-              />
+              <Icon name="x-circle" size={24} color={palette.white} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>글 수정하기</Text>
             <TouchableOpacity
@@ -196,11 +187,7 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
               )}
             </TouchableOpacity>
           </View>
-          <Image
-            source={iconMenuSeparator}
-            style={styles.separator}
-            resizeMode="contain"
-          />
+          <View style={styles.separator} />
 
           <ScrollView
             style={styles.scrollView}
@@ -372,16 +359,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeIcon: {
-    width: 24,
-    height: 24,
-  },
   separator: {
-    width: 400,
-    height: 10,
+    flex: 17,
+    borderBottomWidth: 1,
+    width: "100%",
+    borderBottomColor: '#E1E2E4',
     marginBottom: 10,
-    tintColor: palette.white,
-    alignSelf: "center",
   },
   headerTitle: {
     fontSize: 18,

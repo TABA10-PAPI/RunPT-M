@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import { useUid } from "@hooks/UseUid";
 import apiClient from "@config/api";
 import { getTierImage } from "@utils/tierImages";
-
-const iconComment = require("@assets/community/comment2.png");
 
 export default function PostCard({ 
   post, 
@@ -14,7 +13,8 @@ export default function PostCard({
   containerStyle,
   cardStyle,
   disablePress = false,
-  onShowParticipants // 참가자 확인 버튼 클릭 핸들러
+  onShowParticipants, // 참가자 확인 버튼 클릭 핸들러
+  onParticipateChange // 참가/참가 취소 후 콜백 (DetailPost에서 데이터 새로고침용)
 }) {
   const navigation = useNavigation();
   const { uid } = useUid();
@@ -76,6 +76,11 @@ export default function PostCard({
         setParticipateCount(prev => 
           newIsParticipated ? prev + 1 : Math.max(0, prev - 1)
         );
+        
+        // DetailPost에서 데이터 새로고침을 위한 콜백 호출
+        if (onParticipateChange) {
+          onParticipateChange();
+        }
       } else {
         // 실패 시 에러 메시지 표시
         Alert.alert(
@@ -106,14 +111,7 @@ export default function PostCard({
     >
       {/* 게시자 정보 헤더 */}
       <View style={styles.postHeader}>
-        {/* TODO: 프로필 이미지 추가 필요 - assets/profile_placeholder.png 또는 실제 프로필 이미지 */}
-        <View style={styles.profileCircle}>
-          {/* <Image 
-            source={require('@assets/profile_placeholder.png')} 
-            style={styles.profileImage}
-            resizeMode="cover"
-          /> */}
-        </View>
+       
 
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
@@ -193,13 +191,13 @@ export default function PostCard({
               <View style={styles.bottomRow}>
                 {isAuthor ? (
                   // 작성자일 경우: 참가자 확인 버튼 (DetailPost에서만 동작)
-                  <TouchableOpacity
+                <TouchableOpacity
                     style={[
                       styles.actionRow,
                       styles.participateButton,
                       styles.participateButtonActive
                     ]}
-                    activeOpacity={0.7}
+                  activeOpacity={0.7}
                     onPress={(e) => {
                       e.stopPropagation();
                       if (isDetailView && onShowParticipants) {
@@ -247,7 +245,7 @@ export default function PostCard({
                     ]}>
                       {participateCount}
                     </Text>
-                  </TouchableOpacity>
+                </TouchableOpacity>
                 )}
 
           <TouchableOpacity
@@ -258,11 +256,7 @@ export default function PostCard({
               navigation.navigate("DetailPost", { post });
             }}
           >
-            <Image
-              source={iconComment}
-              style={styles.iconComment}
-              resizeMode="contain"
-            />
+            <Icon name="message-circle" size={16} color={palette.grayLight} style={styles.iconComment} />
             <Text style={styles.bottomText}>{post.comments}</Text>
           </TouchableOpacity>
           
@@ -345,12 +339,6 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 16,
   },
-  cardDetail: {
-    // 상세 페이지에서 필요한 추가 스타일이 있다면 여기에 추가
-    // 예: marginBottom: 0 등
-  },
-
-  // 장소 및 출발시간 정보
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -434,9 +422,6 @@ const styles = StyleSheet.create({
   },
   iconComment: {
     marginTop: 2,
-    width: 16,
-    height: 16,
-    tintColor: palette.grayLight,
   },
   participateButton: {
     paddingHorizontal: 8,

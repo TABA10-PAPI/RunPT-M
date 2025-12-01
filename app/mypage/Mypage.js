@@ -107,7 +107,8 @@ export default function Mypage() {
       setIsLoading(true);
       setError(null);
 
-      const uid = await AsyncStorage.getItem("uid");
+      //const uid = await AsyncStorage.getItem("uid");
+      const uid = 12;
       
       if (!uid) {
         Alert.alert("오류", "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");

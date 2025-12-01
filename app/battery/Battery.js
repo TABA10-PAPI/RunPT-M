@@ -1,17 +1,64 @@
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import React, { useMemo, useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import ScreenHeader from "@components/ScreenHeader";
 import { palette } from "@styles/globalStyles";
+import apiClient from "@config/api";
+//import { useUid } from "@hooks/UseUid";
 
 export default function Battery() {
   const navigation = useNavigation();
   const route = useRoute();
+  //const { uid, isLoading: uidLoading } = useUid();
+  const uid = 12;
+  const uidLoading = false;
 
-  // TODO: replace with value fetched from backend (0~100)
-  const batteryFromServer = 70;
+  const [batteryScore, setBatteryScore] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // API 호출
+  useEffect(() => {
+    const fetchBatteryData = async () => {
+      if (uidLoading || !uid) {
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // 날짜 포맷팅 (YYYY-MM-DD)
+        //const date = new Date().toISOString().split('T')[0];
+        const date = "2025-11-21";
+        
+        // API 요청
+        const response = await apiClient.post("/running/battery", {
+          user_id: parseInt(uid, 10),
+          date: date,
+        });
+
+        if (response.data.code === "SU") {
+          setBatteryScore(response.data.battery_score);
+        } else {
+          throw new Error(response.data.message || "배터리 데이터를 가져오는데 실패했습니다.");
+        }
+      } catch (err) {
+        console.error("[Battery] API 호출 실패:", err);
+        setError(err?.message || "배터리 데이터를 불러오는데 실패했습니다.");
+        // 에러 발생 시 기본값 설정
+        setBatteryScore(70);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBatteryData();
+  }, [uid, uidLoading]);
+
+  const batteryFromServer = batteryScore !== null ? batteryScore : 70;
 
   const batteryLevel = useMemo(() => {
     const clamped = Math.max(0, Math.min(100, batteryFromServer));
@@ -40,7 +87,13 @@ export default function Battery() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.batteryCard}>
+          {isLoading || uidLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={palette.green} />
+            </View>
+          ) : (
+            <>
+              <View style={styles.batteryCard}>
             <View style={styles.batteryContainer}>
               <View style={styles.batteryOutline}>
                 <View
@@ -105,6 +158,8 @@ export default function Battery() {
               </View>
             ))}
           </View>
+            </>
+          )}
         </ScrollView>
       </View>
       <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
@@ -237,5 +292,11 @@ const styles = StyleSheet.create({
   },
   statUnitDark: {
     color: palette.grayDark,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 200,
   },
 });

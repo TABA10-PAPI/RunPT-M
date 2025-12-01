@@ -22,6 +22,10 @@ import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import CommentItem from "./components/CommentItem";
 import PostCard from "./components/PostCard";
+import PostMenuPopUp from "./components/PostMenuPopUp";
+import EditPostPopUp from "./components/EditPostPopUp";
+import DeleteConfirmPopUp from "./components/DeleteConfirmPopUp";
+import ParticipantsPopUp from "./components/ParticipantsPopUp";
 
 const iconBack = require("@assets/community/arrow_left.png");
 const iconSend = require("@assets/community/sendButton.png");
@@ -95,8 +99,19 @@ export default function DetailPost() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  // 팝업 상태 관리
+  const [isMenuPopupVisible, setIsMenuPopupVisible] = useState(false);
+  const [isEditPopupVisible, setIsEditPopupVisible] = useState(false);
+  const [isDeleteConfirmVisible, setIsDeleteConfirmVisible] = useState(false);
+  const [isParticipantsPopupVisible, setIsParticipantsPopupVisible] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
+  const [isCommentDeleteConfirmVisible, setIsCommentDeleteConfirmVisible] = useState(false);
 
   const communityId = route.params?.post?.id || route.params?.post?.apiData?.id;
+  
+  // 작성자 확인
+  const isAuthor = uid && post.apiData?.uid && Number(uid) === Number(post.apiData.uid);
   
   // BottomNavigationBar 높이 계산 (paddingTop 6 + navItems paddingBottom 12 + navItem paddingVertical 16 + 아이콘 28 + paddingBottom 6 = 68)
   const bottomNavBarHeight = 68 + insets.bottom;
@@ -175,6 +190,16 @@ export default function DetailPost() {
     const pace = apiPost.targetpace || "";
     const duration = calculateDuration(distance, pace);
 
+    // 댓글 개수 계산 (Community.js와 동일한 로직)
+    let commentCount = 0;
+    if (apiPost.comments && Array.isArray(apiPost.comments)) {
+      commentCount = apiPost.comments.length;
+    } else if (apiPost.commentCount !== undefined) {
+      commentCount = Number(apiPost.commentCount) || 0;
+    } else if (apiPost.comments !== undefined) {
+      commentCount = Number(apiPost.comments) || 0;
+    }
+
     return {
       id: String(apiPost.id || ""),
       name: apiPost.nickname || "사용자",
@@ -185,10 +210,11 @@ export default function DetailPost() {
       duration: duration,
       pace: pace,
       likes: 0,
-      comments: apiPost.comments?.length || 0,
+      comments: commentCount,
       description: apiPost.shortinfo || "",
       timestamp: apiPost.createAt || "",
       tier: apiPost.tier || "UNRANKED",
+      participateuser: apiPost.participateuser || 0,
       apiData: apiPost,
     };
   };
@@ -212,6 +238,7 @@ export default function DetailPost() {
             .replace(/\./g, "/")
             .replace(/,/g, "")
         : "",
+      apiData: apiComment, // 원본 데이터 유지 (uid 확인용)
     };
   };
 
@@ -230,16 +257,19 @@ export default function DetailPost() {
 
       // 응답 형식: {code, message, id, uid, nickname, tier, ...comments: [...]}
       const apiPost = response.data;
-      const transformedPost = transformPostData(apiPost);
-      setPost(transformedPost);
-
+      
       // 댓글 목록 변환
+      let transformedComments = [];
       if (Array.isArray(apiPost.comments)) {
-        const transformedComments = apiPost.comments.map(transformCommentData);
-        setComments(transformedComments);
-      } else {
-        setComments([]);
+        transformedComments = apiPost.comments.map(transformCommentData);
       }
+      setComments(transformedComments);
+      
+      // 게시물 데이터 변환 (댓글 수와 참가자 수 포함)
+      const transformedPost = transformPostData(apiPost);
+      // 댓글 수는 실제 comments 배열 길이로 업데이트
+      transformedPost.comments = transformedComments.length;
+      setPost(transformedPost);
     } catch (error) {
       Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
     } finally {
@@ -293,6 +323,69 @@ export default function DetailPost() {
     }
   };
 
+  // 게시물 삭제
+  const handleDeletePost = async () => {
+    if (!uid || !communityId) {
+      Alert.alert("오류", "삭제할 수 없습니다.");
+      return;
+    }
+
+    try {
+      // TODO: 게시물 삭제 API 호출 (백엔드 명세 확인 필요)
+      // 예상: DELETE /community/{id} 또는 POST /community/delete
+      try {
+        await apiClient.delete(`/community/${communityId}`);
+      } catch (deleteError) {
+        // DELETE가 실패하면 POST로 시도
+        await apiClient.post("/community/delete", { 
+          id: Number(communityId), 
+          uid: Number(uid) 
+        });
+      }
+      
+      Alert.alert("완료", "게시물이 삭제되었습니다.", [
+        {
+          text: "확인",
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+    } catch (error) {
+      Alert.alert("오류", error.response?.data?.message || "게시물 삭제에 실패했습니다.");
+    }
+  };
+
+  // 게시물 수정 완료
+  const handleEditPostComplete = async () => {
+    await fetchPostDetail();
+    setIsEditPopupVisible(false);
+  };
+
+  // 댓글 삭제
+  const handleDeleteComment = async () => {
+    if (!commentToDelete || !uid) {
+      return;
+    }
+
+    try {
+      // TODO: 댓글 삭제 API 호출 (백엔드 명세 확인 필요)
+      // 예상: DELETE /community/comment/{id} 또는 POST /community/comment/delete
+      try {
+        await apiClient.delete(`/community/comment/${commentToDelete.id}`);
+      } catch (deleteError) {
+        // DELETE가 실패하면 POST로 시도
+        await apiClient.post("/community/comment/delete", { 
+          id: Number(commentToDelete.id),
+          uid: Number(uid)
+        });
+      }
+      
+      await fetchPostDetail();
+      setCommentToDelete(null);
+    } catch (error) {
+      Alert.alert("오류", error.response?.data?.message || "댓글 삭제에 실패했습니다.");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
@@ -319,13 +412,19 @@ export default function DetailPost() {
                 </TouchableOpacity>
               }
               rightContent={
-                <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
-                  <Image
-                    source={iconMenu}
-                    style={styles.menuIcon}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
+                isAuthor ? (
+                  <TouchableOpacity
+                    style={styles.menuButton}
+                    activeOpacity={0.7}
+                    onPress={() => setIsMenuPopupVisible(true)}
+                  >
+                    <Image
+                      source={iconMenu}
+                      style={styles.menuIcon}
+                      resizeMode="contain"
+                    />
+                  </TouchableOpacity>
+                ) : null
               }
             />
           </View>
@@ -336,7 +435,12 @@ export default function DetailPost() {
             </View>
           ) : (
             <View style={styles.contentWrapper}>
-              <PostCard post={post} variant="detail" disablePress={true} />
+              <PostCard
+                post={post}
+                variant="detail"
+                disablePress={true}
+                onShowParticipants={() => setIsParticipantsPopupVisible(true)}
+              />
               <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -346,9 +450,22 @@ export default function DetailPost() {
                 {/* 댓글 섹션 */}
                 <View style={styles.commentsSection}>
                   <Text style={styles.commentsHeader}>댓글 {comments.length}</Text>
-                  {comments.map((comment) => (
-                    <CommentItem key={comment.id} comment={comment} />
-                  ))}
+                  {comments.map((comment) => {
+                    // 댓글 작성자 확인
+                    const isCommentAuthor = uid && comment.apiData?.uid && 
+                      Number(uid) === Number(comment.apiData.uid);
+                    return (
+                      <CommentItem
+                        key={comment.id}
+                        comment={comment}
+                        canDelete={isCommentAuthor}
+                        onDelete={(comment) => {
+                          setCommentToDelete(comment);
+                          setIsCommentDeleteConfirmVisible(true);
+                        }}
+                      />
+                    );
+                  })}
                 </View>
               </ScrollView>
             </View>
@@ -400,6 +517,50 @@ export default function DetailPost() {
         </View>
       </KeyboardAvoidingView>
       <BottomNavigationBar navigation={navigation} currentRoute="Community" />
+      
+      {/* 게시물 메뉴 팝업 */}
+      <PostMenuPopUp
+        visible={isMenuPopupVisible}
+        onClose={() => setIsMenuPopupVisible(false)}
+        onEdit={() => setIsEditPopupVisible(true)}
+        onDelete={() => setIsDeleteConfirmVisible(true)}
+      />
+
+      {/* 게시물 수정 팝업 */}
+      <EditPostPopUp
+        visible={isEditPopupVisible}
+        onClose={() => setIsEditPopupVisible(false)}
+        onSubmit={handleEditPostComplete}
+        post={post}
+      />
+
+      {/* 게시물 삭제 확인 팝업 */}
+      <DeleteConfirmPopUp
+        visible={isDeleteConfirmVisible}
+        onClose={() => setIsDeleteConfirmVisible(false)}
+        onConfirm={handleDeletePost}
+        title="게시물을 삭제하시겠습니까?"
+        message="삭제된 게시물은 복구할 수 없습니다."
+      />
+
+      {/* 댓글 삭제 확인 팝업 */}
+      <DeleteConfirmPopUp
+        visible={isCommentDeleteConfirmVisible}
+        onClose={() => {
+          setIsCommentDeleteConfirmVisible(false);
+          setCommentToDelete(null);
+        }}
+        onConfirm={handleDeleteComment}
+        title="댓글을 삭제하시겠습니까?"
+        message="삭제된 댓글은 복구할 수 없습니다."
+      />
+
+      {/* 참가자 목록 팝업 */}
+      <ParticipantsPopUp
+        visible={isParticipantsPopupVisible}
+        onClose={() => setIsParticipantsPopupVisible(false)}
+        communityId={communityId}
+      />
     </SafeAreaView>
   );
 }

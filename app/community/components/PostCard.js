@@ -13,12 +13,16 @@ export default function PostCard({
   variant = "list", // "list" 또는 "detail"
   containerStyle,
   cardStyle,
-  disablePress = false 
+  disablePress = false,
+  onShowParticipants // 참가자 확인 버튼 클릭 핸들러
 }) {
   const navigation = useNavigation();
   const { uid } = useUid();
   const [isParticipated, setIsParticipated] = useState(post.isParticipated || false);
   const [participateCount, setParticipateCount] = useState(post.participateuser || 0);
+
+  // 작성자 확인: post.apiData?.uid와 현재 uid 비교
+  const isAuthor = uid && post.apiData?.uid && Number(uid) === Number(post.apiData.uid);
 
   // post가 변경될 때 참가 상태 및 인원 수 업데이트
   useEffect(() => {
@@ -187,28 +191,64 @@ export default function PostCard({
 
               {/* 참가 및 댓글 */}
               <View style={styles.bottomRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.actionRow,
-                    styles.participateButton,
-                    isParticipated && styles.participateButtonActive
-                  ]}
-                  activeOpacity={0.7}
-                  onPress={handleParticipate}
-                >
-                  <Text style={[
-                    styles.participateText,
-                    isParticipated && styles.participateTextActive
-                  ]}>
-                    참가
-                  </Text>
-                  <Text style={[
-                    styles.bottomText,
-                    isParticipated && styles.participateCountActive
-                  ]}>
-                    {participateCount}
-                  </Text>
-                </TouchableOpacity>
+                {isAuthor ? (
+                  // 작성자일 경우: 참가자 확인 버튼 (DetailPost에서만 동작)
+                  <TouchableOpacity
+                    style={[
+                      styles.actionRow,
+                      styles.participateButton,
+                      styles.participateButtonActive
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (isDetailView && onShowParticipants) {
+                        // DetailPost에서만 참가자 확인 기능 사용
+                        onShowParticipants();
+                      } else {
+                        // Community.js에서는 상세 페이지로 이동
+                        navigation.navigate("DetailPost", { post });
+                      }
+                    }}
+                  >
+                    <Text style={[
+                      styles.participateText,
+                      styles.participateTextActive
+                    ]}>
+                      {isDetailView ? "참가자 확인" : "참가자"}
+                    </Text>
+                    <Text style={[
+                      styles.bottomText,
+                      styles.participateCountActive
+                    ]}>
+                      {participateCount}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  // 일반 사용자일 경우: 참가 버튼
+                  <TouchableOpacity
+                    style={[
+                      styles.actionRow,
+                      styles.participateButton,
+                      isParticipated && styles.participateButtonActive
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={handleParticipate}
+                  >
+                    <Text style={[
+                      styles.participateText,
+                      isParticipated && styles.participateTextActive
+                    ]}>
+                      참가
+                    </Text>
+                    <Text style={[
+                      styles.bottomText,
+                      isParticipated && styles.participateCountActive
+                    ]}>
+                      {participateCount}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
           <TouchableOpacity
             style={[styles.actionRow, styles.commentRow]}
@@ -274,10 +314,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     ...typography.bold,
-  },
-  trophyIcon: {
-    fontSize: 16,
-    marginLeft: 6,
   },
   tierImage: {
     width: 24,
@@ -398,14 +434,14 @@ const styles = StyleSheet.create({
   },
   iconComment: {
     marginTop: 2,
-    width: 20,
-    height: 20,
+    width: 16,
+    height: 16,
     tintColor: palette.grayLight,
   },
   participateButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: palette.grayLight,
     backgroundColor: "transparent",
@@ -416,7 +452,7 @@ const styles = StyleSheet.create({
   },
   participateText: {
     color: palette.grayLight,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "600",
     ...typography.semibold,
   },

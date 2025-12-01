@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -14,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
-import { palette, typography } from "@styles/globalStyles";
+import { palette } from "@styles/globalStyles";
 import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import PostCard from "./components/PostCard";
@@ -22,61 +21,6 @@ import NewPostPopUp from "./components/NewPostPopUp";
 
 const iconNewPost = require("@assets/community/new_post.png");
 const iconSearch = require("@assets/community/search.png");
-
-const MOCK_POSTS = [
-  {
-    id: "1",
-    name: "홍길동",
-    location: "수지구 죽전동",
-    place: "죽전역 앞 엑스파크 공원",
-    startTime: "오후 7시 30분",
-    distance: "5KM",
-    duration: "40Min",
-    pace: "6'30\"/KM",
-    likes: 5,
-    comments: 9,
-    description: "원하는 코스 있으시면 맞추어 뛰고 싶습니다",
-  },
-  {
-    id: "2",
-    name: "홍길동",
-    location: "수지구 죽전동",
-    place: "죽전역 앞 엑스파크 공원",
-    startTime: "오후 7시 30분",
-    distance: "5KM",
-    duration: "40Min",
-    pace: "6'30\"/KM",
-    likes: 5,
-    comments: 9,
-    description: "원하는 코스 있으시면 맞추어 뛰고 싶습니다",
-  },
-  {
-    id: "3",
-    name: "홍길동",
-    location: "수지구 죽전동",
-    place: "죽전역 앞 엑스파크 공원",
-    startTime: "오후 7시 30분",
-    distance: "5KM",
-    duration: "40Min",
-    pace: "6'30\"/KM",
-    likes: 5,
-    comments: 9,
-    description: "원하는 코스 있으시면 맞추어 뛰고 싶습니다",
-  },
-  {
-    id: "4",
-    name: "홍길동",
-    location: "수지구 죽전동",
-    place: "죽전역 앞 엑스파크 공원",
-    startTime: "오후 7시 30분",
-    distance: "5KM",
-    duration: "40Min",
-    pace: "6'30\"/KM",
-    likes: 5,
-    comments: 9,
-    description: "원하는 코스 있으시면 맞추어 뛰고 싶습니다",
-  },
-];
 
 export default function Community() {
   const navigation = useNavigation();
@@ -153,16 +97,6 @@ export default function Community() {
     const pace = apiPost.targetpace || "";
     const duration = calculateDuration(distance, pace);
 
-    // 디버깅: 페이스와 duration 계산 확인
-    if (pace) {
-      console.log("[Community] 페이스 파싱:", {
-        paceString: pace,
-        distance: distance,
-        parsedPace: parsePaceToMinutes(pace),
-        calculatedDuration: duration,
-      });
-    }
-
     return {
       id: String(apiPost.id || ""),
       name: apiPost.nickname || "사용자",
@@ -186,7 +120,6 @@ export default function Community() {
   // 게시물 목록 가져오기
   const fetchPosts = async () => {
     if (!uid) {
-      console.log("[Community] uid가 없어서 게시물을 가져올 수 없습니다.");
       setIsLoading(false);
       return;
     }
@@ -194,77 +127,25 @@ export default function Community() {
     try {
       setIsLoading(true);
 
-      // POST /community/home
       const response = await apiClient.post("/community/home", {
         uid: Number(uid),
       });
 
-      console.log("[Community] API 응답 전체:", JSON.stringify(response.data, null, 2));
-
-      
       let communitys = null;
-      let code = null;
-      let message = null;
-
       
       if (response.data?.body) {
-        // body 안에 있는 경우
-        const bodyData = response.data.body;
-        communitys = bodyData.communitys;
-        code = bodyData.code;
-        message = bodyData.message;
+        communitys = response.data.body.communitys;
       } else if (response.data?.communitys) {
-        // 직접 communitys가 있는 경우
         communitys = response.data.communitys;
-        code = response.data.code;
-        message = response.data.message;
       }
 
-      console.log("[Community] 응답 분석:", {
-        code,
-        message,
-        communitysCount: Array.isArray(communitys) ? communitys.length : "not an array",
-        communitysType: typeof communitys,
-        hasBody: !!response.data?.body,
-        responseDataKeys: Object.keys(response.data || {}),
-        bodyKeys: response.data?.body ? Object.keys(response.data.body) : null,
-      });
-
-      // communitys가 배열인 경우 처리
       if (Array.isArray(communitys)) {
-        if (communitys.length > 0) {
-          console.log("[Community] 게시물 변환 시작, 개수:", communitys.length);
-          // 첫 번째 게시물의 구조 확인 (댓글 개수 필드 확인용)
-          if (communitys[0]) {
-            console.log("[Community] 첫 번째 게시물 구조:", {
-              id: communitys[0].id,
-              keys: Object.keys(communitys[0]),
-              comments: communitys[0].comments,
-              commentCount: communitys[0].commentCount,
-              participateuser: communitys[0].participateuser,
-            });
-          }
-          const transformedPosts = communitys.map(transformPostData);
-          console.log("[Community] 변환된 게시물:", transformedPosts.length, "개");
-          console.log("[Community] 변환된 첫 번째 게시물 댓글 개수:", transformedPosts[0]?.comments);
-          setPosts(transformedPosts);
-        } else {
-          console.log("[Community] 게시물이 없습니다 (빈 배열)");
-          setPosts([]);
-        }
+        const transformedPosts = communitys.map(transformPostData);
+        setPosts(transformedPosts);
       } else {
-        console.warn("[Community] 게시물 목록을 가져올 수 없습니다.", {
-          code,
-          message,
-          communitysType: typeof communitys,
-          communitysIsArray: Array.isArray(communitys),
-          rawResponse: response.data,
-        });
         setPosts([]);
       }
     } catch (error) {
-      console.error("[Community] 게시물 목록 가져오기 실패:", error);
-      console.error("[Community] 에러 응답:", error.response?.data);
       Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
       setPosts([]);
     } finally {
@@ -291,8 +172,6 @@ export default function Community() {
   const handleSearch = (text) => {
     setSearchText(text);
     // TODO: 검색 기능은 백엔드 API가 준비되면 구현
-    // 현재는 클라이언트 사이드 필터링
-    console.log("[Community] 검색어:", text);
   };
 
   const renderPost = ({ item }) => <PostCard post={item} />;
@@ -372,7 +251,6 @@ const styles = StyleSheet.create({
     width: 33,
     height: 33,
     backgroundColor: palette.black,
-    borderColor: palette.grayBorder,
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",

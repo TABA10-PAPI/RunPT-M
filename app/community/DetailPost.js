@@ -227,7 +227,18 @@ export default function DetailPost() {
       likes: 0,
       comments: commentCount,
       description: apiPost.shortinfo || "",
-      timestamp: apiPost.createAt || "",
+      timestamp: apiPost.createAt
+        ? new Date(apiPost.createAt)
+            .toLocaleString("ko-KR", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+            .replace(/\./g, "/")
+            .replace(/,/g, "")
+        : "",
       tier: apiPost.tier || "UNRANKED",
       participateuser: apiPost.participateuser || 0,
       isParticipated: isParticipated,

@@ -254,8 +254,6 @@ const readRunningData = async () => {
       heartRateAvg: heartRateAvg,
     };
 
-    console.log('Health Connect Running Data:', JSON.stringify(result, null, 2));
-
     // 백엔드로 데이터 전송
     const requestData = {
       uid: uidNumber,
@@ -271,16 +269,11 @@ const readRunningData = async () => {
       const responseData = response?.data;
       
       if (responseData && responseData.code === 'SU') {
-        console.log('Health Connect: 러닝 데이터가 성공적으로 저장되었습니다.');
-        
         // 성공적으로 저장되면 해당 uid의 마지막 처리 시간 업데이트 (운동 종료 시간 기준)
         // 다음번에는 이 시간 이후의 기록만 가져오도록 함
         await AsyncStorage.setItem(LAST_PROCESSED_TIME_KEY, exerciseEndTime.toISOString());
-      } else {
-        console.warn('Health Connect: API 응답이 예상과 다릅니다:', responseData);
       }
     } catch (apiError) {
-      console.error('Health Connect: API 전송 실패:', apiError?.response?.data || apiError?.message);
       // API 전송 실패해도 로컬 결과는 반환
     }
 

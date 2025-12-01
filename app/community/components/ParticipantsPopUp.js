@@ -4,30 +4,39 @@ import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import apiClient from "@config/api";
 import { getTierImage } from "@utils/tierImages";
+import { useUid } from "@hooks/UseUid";
 
 export default function ParticipantsPopUp({ visible, onClose, communityId }) {
+  const { uid } = useUid();
   const [participants, setParticipants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (visible && communityId) {
+    if (visible && communityId && uid) {
       fetchParticipants();
     }
-  }, [visible, communityId]);
+  }, [visible, communityId, uid]);
 
   const fetchParticipants = async () => {
-    if (!communityId) {
+    if (!communityId || !uid) {
       return;
     }
 
     try {
       setIsLoading(true);
       
-      
-      
-      setParticipants([]);
+      const response = await apiClient.post("/community/checkparticipate", {
+        uid: Number(uid),
+        communityid: Number(communityId),
+      });
+
+      if (response.data?.code === "SU" && Array.isArray(response.data.participates)) {
+        setParticipants(response.data.participates);
+      } else {
+        setParticipants([]);
+      }
     } catch (error) {
-      console.error("[ParticipantsPopUp] 참가자 목록 가져오기 실패:", error);
+      Alert.alert("오류", "참가자 목록을 불러오는데 실패했습니다.");
       setParticipants([]);
     } finally {
       setIsLoading(false);
@@ -80,7 +89,7 @@ export default function ParticipantsPopUp({ visible, onClose, communityId }) {
               showsVerticalScrollIndicator={false}
             >
               {participants.map((participant, index) => (
-                <View key={participant.uid || index} style={styles.participantItem}>
+                <View key={participant.id ? `${participant.id}-${index}` : participant.uid ? `${participant.uid}-${index}` : `participant-${index}`} style={styles.participantItem}>
                   <View style={styles.participantProfileCircle}>
                     {/* TODO: 프로필 이미지 */}
                   </View>

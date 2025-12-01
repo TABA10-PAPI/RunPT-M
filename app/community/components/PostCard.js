@@ -26,9 +26,10 @@ export default function PostCard({
 
   // post가 변경될 때 참가 상태 및 인원 수 업데이트
   useEffect(() => {
-    setIsParticipated(post.isParticipated || false);
-    setParticipateCount(post.participateuser || 0);
-  }, [post.isParticipated, post.participateuser]);
+    // post prop이 변경되면 항상 최신 값으로 동기화
+    setIsParticipated(post.isParticipated ?? false);
+    setParticipateCount(post.participateuser ?? 0);
+  }, [post.isParticipated, post.participateuser, post.id, post.comments]);
 
   const handlePostPress = () => {
     if (!disablePress) {
@@ -62,24 +63,28 @@ export default function PostCard({
         ? "/community/participate" 
         : "/community/participate/cancel";
 
-      // 백엔드 API 호출
-      const response = await apiClient.post(apiEndpoint, {
+      const requestData = {
         uid: uidNumber,
         communityid: Number(communityId),
-      });
+      };
+
+      // 백엔드 API 호출
+      const response = await apiClient.post(apiEndpoint, requestData);
 
       const responseData = response?.data || response;
       
       if (responseData.code === "SU") {
-        // 성공 시 상태 업데이트
-        setIsParticipated(newIsParticipated);
-        setParticipateCount(prev => 
-          newIsParticipated ? prev + 1 : Math.max(0, prev - 1)
-        );
-        
         // DetailPost에서 데이터 새로고침을 위한 콜백 호출
+        // 콜백이 완료된 후 최신 데이터로 업데이트
         if (onParticipateChange) {
-          onParticipateChange();
+          await onParticipateChange();
+          // 콜백 후 post prop이 업데이트되면 useEffect에서 자동으로 동기화됨
+        } else {
+          // Community.js에서는 로컬 상태만 업데이트
+          setIsParticipated(newIsParticipated);
+          setParticipateCount(prev => 
+            newIsParticipated ? prev + 1 : Math.max(0, prev - 1)
+          );
         }
       } else {
         // 실패 시 에러 메시지 표시
@@ -89,7 +94,6 @@ export default function PostCard({
         );
       }
     } catch (error) {
-      console.error("[PostCard] 참가 오류:", error);
       const errorMessage = error?.response?.data?.message 
         || error?.message 
         || "참가 처리 중 문제가 발생했습니다.";
@@ -257,7 +261,7 @@ export default function PostCard({
             }}
           >
             <Icon name="message-circle" size={16} color={palette.grayLight} style={styles.iconComment} />
-            <Text style={styles.bottomText}>{post.comments}</Text>
+            <Text style={styles.bottomText}>{post.comments ?? 0}</Text>
           </TouchableOpacity>
           
           {/* 작성 시간 (상세 페이지에서만 표시) */}

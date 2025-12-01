@@ -120,7 +120,6 @@ const path = require("path");
     );
   
     if (!fs.existsSync(stringsXmlPath)) {
-      console.warn(`strings.xml not found at ${stringsXmlPath}`);
       return config;
     }
   
@@ -128,7 +127,6 @@ const path = require("path");
     const kakaoAppKey = process.env.EXPO_PUBLIC_KAKAO_API_KEY_MOBILE || "";
   
     if (!kakaoAppKey) {
-      console.warn('EXPO_PUBLIC_KAKAO_API_KEY_MOBILE이 설정되지 않았습니다.');
       return config;
     }
 

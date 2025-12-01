@@ -113,16 +113,9 @@ export default function Mypage() {
         return;
       }
 
-      console.log("📤 마이페이지 API 요청 시작");
-      console.log("요청 URL:", "http://52.78.76.223:8080/user/mypage");
-      console.log("요청 데이터:", { uid: parseInt(uid, 10) });
-      
       const response = await apiClient.post("/user/mypage", {
         uid: parseInt(uid, 10)
       });
-
-      console.log("✅ 마이페이지 API 응답 성공");
-      console.log("응답 데이터:", response.data);
 
       if (response.data.code === "SU") {
         setUserInfo(response.data.user);
@@ -132,7 +125,6 @@ export default function Mypage() {
         throw new Error(response.data.message || "데이터를 불러오는데 실패했습니다.");
       }
     } catch (err) {
-      console.error("마이페이지 데이터 로딩 실패: ", err);
       setError(err.message || "데이터를 불러오는데 실패했습니다.");
       Alert.alert("오류", "마이페이지 정보를 불러오는데 실패했습니다.");
     } finally {

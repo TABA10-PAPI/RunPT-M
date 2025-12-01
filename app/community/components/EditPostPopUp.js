@@ -113,8 +113,8 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
 
       
       const requestData = {
-        id: Number(communityId),
         uid: uidNumber,
+        id: Number(communityId),
         title: title.trim(),
         startpoint: place,
         distance: Number(distance),
@@ -124,8 +124,7 @@ export default function EditPostPopUp({ visible, onClose, onSubmit, post }) {
         shortinfo: content,
       };
 
-      
-      await apiClient.post("/community/update", requestData);
+      await apiClient.post("/community/modify", requestData);
       
       onSubmit();
       handleClose();

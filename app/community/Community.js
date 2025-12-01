@@ -78,8 +78,32 @@ export default function Community() {
     return `${Math.round(totalMinutes)}분`;
   };
 
+  // 현재 사용자의 참가 여부 확인 (참가자 목록에서 uid 확인)
+  const checkUserParticipation = async (communityId, currentUid) => {
+    if (!communityId || !currentUid) {
+      return false;
+    }
+
+    try {
+      const response = await apiClient.post("/community/checkparticipate", {
+        uid: Number(currentUid),
+        communityid: Number(communityId),
+      });
+
+      if (response.data?.code === "SU" && Array.isArray(response.data.participates)) {
+        // 참가자 목록에서 현재 uid가 있는지 확인
+        return response.data.participates.some(
+          (participant) => Number(participant.uid) === Number(currentUid)
+        );
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  };
+
   // API 응답을 PostCard 형식으로 변환
-  const transformPostData = (apiPost) => {
+  const transformPostData = async (apiPost) => {
     // 댓글 개수: API 응답에 comments 필드가 있으면 그 길이를 사용하고, 
     // 없으면 commentCount나 다른 필드를 확인, 모두 없으면 0
     let commentCount = 0;
@@ -96,6 +120,9 @@ export default function Community() {
     const pace = apiPost.targetpace || "";
     const duration = calculateDuration(distance, pace);
 
+    // 참가 여부 확인
+    const isParticipated = await checkUserParticipation(apiPost.id, uid);
+
     return {
       id: String(apiPost.id || ""),
       name: apiPost.nickname || "사용자",
@@ -110,7 +137,7 @@ export default function Community() {
       timestamp: apiPost.createAt || "",
       tier: apiPost.tier || "UNRANKED",
       participateuser: apiPost.participateuser || 0,
-      isParticipated: false, // TODO: 백엔드에서 현재 사용자의 참가 여부를 확인해야 함
+      isParticipated: isParticipated,
       // API 원본 데이터 유지
       apiData: apiPost,
     };
@@ -139,7 +166,9 @@ export default function Community() {
       }
 
       if (Array.isArray(communitys)) {
-        const transformedPosts = communitys.map(transformPostData);
+        // 각 게시물에 대해 참가 여부를 확인하면서 변환
+        const transformedPostsPromises = communitys.map(post => transformPostData(post));
+        const transformedPosts = await Promise.all(transformedPostsPromises);
         setPosts(transformedPosts);
       } else {
         setPosts([]);
@@ -224,7 +253,7 @@ export default function Community() {
         ) : (
           <FlatList
             data={posts}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : `post-${index}`}
             renderItem={renderPost}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 100 }}

@@ -106,10 +106,20 @@ export default function DetailPost() {
 
   const communityId = route.params?.post?.id || route.params?.post?.apiData?.id;
   
-  // 작성자 확인
-  const isAuthor = uid && post.apiData?.uid && Number(uid) === Number(post.apiData.uid);
+  // 게시글 작성자 확인
+  const [isAuthor, setIsAuthor] = useState(false);
   
-  // BottomNavigationBar 높이 계산 (paddingTop 6 + navItems paddingBottom 12 + navItem paddingVertical 16 + 아이콘 28 + paddingBottom 6 = 68)
+  useEffect(() => {
+    if (uid && post?.apiData?.uid) {
+      const authorUid = Number(post.apiData.uid);
+      const currentUid = Number(uid);
+      setIsAuthor(authorUid === currentUid);
+    } else {
+      setIsAuthor(false);
+    }
+  }, [uid, post?.apiData?.uid, post?.id]);
+  
+  // BottomNavigationBar 높이 계산
   const bottomNavBarHeight = 68 + insets.bottom;
 
   // 키보드 show/hide 이벤트 처리
@@ -180,21 +190,48 @@ export default function DetailPost() {
     return `${Math.round(totalMinutes)}분`;
   };
 
+  // 현재 사용자의 참가 여부 확인
+  const checkUserParticipation = async (communityId, currentUid) => {
+    if (!communityId || !currentUid) {
+      return false;
+    }
+
+    try {
+      const response = await apiClient.post("/community/checkparticipate", {
+        uid: Number(currentUid),
+        communityid: Number(communityId),
+      });
+
+      if (response.data?.code === "SU" && Array.isArray(response.data.participates)) {
+        // 참가자 목록에서 현재 uid가 있는지 확인
+        return response.data.participates.some(
+          (participant) => Number(participant.uid) === Number(currentUid)
+        );
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  };
+
   // API 응답을 PostCard 형식으로 변환
-  const transformPostData = (apiPost) => {
+  const transformPostData = async (apiPost) => {
     const distance = apiPost.distance || 0;
     const pace = apiPost.targetpace || "";
     const duration = calculateDuration(distance, pace);
 
-    // 댓글 개수 계산 (Community.js와 동일한 로직)
+    // 댓글 개수 계산
     let commentCount = 0;
-    if (apiPost.comments && Array.isArray(apiPost.comments)) {
+    if (Array.isArray(apiPost.comments)) {
       commentCount = apiPost.comments.length;
     } else if (apiPost.commentCount !== undefined) {
       commentCount = Number(apiPost.commentCount) || 0;
     } else if (apiPost.comments !== undefined) {
       commentCount = Number(apiPost.comments) || 0;
     }
+
+    // 참가 여부 확인
+    const isParticipated = await checkUserParticipation(apiPost.id, uid);
 
     return {
       id: String(apiPost.id || ""),
@@ -211,6 +248,7 @@ export default function DetailPost() {
       timestamp: apiPost.createAt || "",
       tier: apiPost.tier || "UNRANKED",
       participateuser: apiPost.participateuser || 0,
+      isParticipated: isParticipated,
       apiData: apiPost,
     };
   };
@@ -234,7 +272,7 @@ export default function DetailPost() {
             .replace(/\./g, "/")
             .replace(/,/g, "")
         : "",
-      apiData: apiComment, // 원본 데이터 유지 (uid 확인용)
+      apiData: apiComment,
     };
   };
 
@@ -251,20 +289,18 @@ export default function DetailPost() {
         id: Number(communityId),
       });
 
-      // 응답 형식: {code, message, id, uid, nickname, tier, ...comments: [...]}
       const apiPost = response.data;
       
       // 댓글 목록 변환
-      let transformedComments = [];
-      if (Array.isArray(apiPost.comments)) {
-        transformedComments = apiPost.comments.map(transformCommentData);
-      }
+      const transformedComments = Array.isArray(apiPost.comments)
+        ? apiPost.comments.map(transformCommentData)
+        : [];
       setComments(transformedComments);
       
-      // 게시물 데이터 변환 (댓글 수와 참가자 수 포함)
-      const transformedPost = transformPostData(apiPost);
-      // 댓글 수는 실제 comments 배열 길이로 업데이트
+      // 게시물 데이터 변환
+      const transformedPost = await transformPostData(apiPost);
       transformedPost.comments = transformedComments.length;
+      transformedPost.participateuser = apiPost.participateuser || 0;
       setPost(transformedPost);
     } catch (error) {
       Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
@@ -278,6 +314,13 @@ export default function DetailPost() {
       fetchPostDetail();
     }
   }, [communityId]);
+
+  // uid가 변경될 때 게시물 정보 다시 가져오기
+  useEffect(() => {
+    if (uid && communityId) {
+      fetchPostDetail();
+    }
+  }, [uid]);
 
   const handleBack = () => {
     navigation.goBack();
@@ -309,8 +352,6 @@ export default function DetailPost() {
       });
 
       setCommentText("");
-
-      // 게시물 상세 정보 새로고침 (댓글 수 업데이트 및 새 댓글 표시)
       await fetchPostDetail();
     } catch (error) {
       Alert.alert("오류", error.response?.data?.message || "댓글 작성에 실패했습니다.");
@@ -327,17 +368,10 @@ export default function DetailPost() {
     }
 
     try {
-      // TODO: 게시물 삭제 API 호출 (백엔드 명세 확인 필요)
-      // 예상: DELETE /community/{id} 또는 POST /community/delete
-      try {
-        await apiClient.delete(`/community/${communityId}`);
-      } catch (deleteError) {
-        // DELETE가 실패하면 POST로 시도
-        await apiClient.post("/community/delete", { 
-          id: Number(communityId), 
-          uid: Number(uid) 
-        });
-      }
+      await apiClient.post("/community/delete", {
+        uid: Number(uid),
+        id: Number(communityId),
+      });
       
       Alert.alert("완료", "게시물이 삭제되었습니다.", [
         {
@@ -356,6 +390,14 @@ export default function DetailPost() {
     setIsEditPopupVisible(false);
   };
 
+  // 댓글 작성자인지 확인하는 헬퍼 함수
+  const isCommentAuthor = (comment) => {
+    if (!uid || !comment?.apiData?.uid) {
+      return false;
+    }
+    return Number(uid) === Number(comment.apiData.uid);
+  };
+
   // 댓글 삭제
   const handleDeleteComment = async () => {
     if (!commentToDelete || !uid || !communityId) {
@@ -363,14 +405,15 @@ export default function DetailPost() {
     }
 
     try {
-      // POST /community/comment/delete (명세서 기준)
-      await apiClient.post("/community/comment/delete", { 
+      await apiClient.post("/community/comment/delete", {
         uid: Number(uid),
-        communityid: Number(communityId)
+        communityid: Number(communityId),
+        commentid: Number(commentToDelete.id),
       });
       
       await fetchPostDetail();
       setCommentToDelete(null);
+      setIsCommentDeleteConfirmVisible(false);
     } catch (error) {
       Alert.alert("오류", error.response?.data?.message || "댓글 삭제에 실패했습니다.");
     }
@@ -417,13 +460,17 @@ export default function DetailPost() {
             </View>
           ) : (
             <View style={styles.contentWrapper}>
-              <PostCard
-                post={post}
-                variant="detail"
-                disablePress={true}
-                onShowParticipants={() => setIsParticipantsPopupVisible(true)}
-                onParticipateChange={fetchPostDetail}
-              />
+              {post && (
+                <PostCard
+                  post={post}
+                  variant="detail"
+                  disablePress={true}
+                  onShowParticipants={() => setIsParticipantsPopupVisible(true)}
+                  onParticipateChange={async () => {
+                    await fetchPostDetail();
+                  }}
+                />
+              )}
               <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -433,19 +480,17 @@ export default function DetailPost() {
                 {/* 댓글 섹션 */}
                 <View style={styles.commentsSection}>
                   <Text style={styles.commentsHeader}>댓글 {comments.length}</Text>
-                  {comments.map((comment) => {
-                    return (
-                      <CommentItem
-                        key={comment.id}
-                        comment={comment}
-                        canDelete={isAuthor}
-                        onDelete={(comment) => {
-                          setCommentToDelete(comment);
-                          setIsCommentDeleteConfirmVisible(true);
-                        }}
-                      />
-                    );
-                  })}
+                  {comments.map((comment, index) => (
+                    <CommentItem
+                      key={comment.id ? `${comment.id}-${index}` : `comment-${index}`}
+                      comment={comment}
+                      canDelete={isCommentAuthor(comment)}
+                      onDelete={(comment) => {
+                        setCommentToDelete(comment);
+                        setIsCommentDeleteConfirmVisible(true);
+                      }}
+                    />
+                  ))}
                 </View>
               </ScrollView>
             </View>

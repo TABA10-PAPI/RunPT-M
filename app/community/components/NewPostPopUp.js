@@ -105,25 +105,9 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
         shortinfo: content,
       };
 
-      console.log("[NewPostPopUp] 백엔드로 전송하는 데이터:", {
-        ...requestData,
-        uid: uidNumber,
-      });
-
-      // POST /community/add
       await apiClient.post("/community/add", requestData);
       
-      const postData = {
-        title: title.trim(),
-        startpoint: place,
-        distance: Number(distance),
-        starttime: startTime,
-        targetpace: targetpace,
-        targetgender: targetGender,
-        shortinfo: content,
-      };
-      
-      onSubmit(postData);
+      onSubmit();
       handleClose();
     } catch (error) {
       Alert.alert(

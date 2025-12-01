@@ -74,7 +74,6 @@ export default function Run() {
         throw new Error(response.data.message || "추천 데이터를 가져올 수 없습니다.");
       }
     } catch (err) {
-      console.error("[Run] API 호출 실패:", err);
       const errorMessage = err.response?.data?.message || err.message || "러닝 추천을 불러오는데 실패했습니다.";
       setError(errorMessage);
       Alert.alert("오류", errorMessage);

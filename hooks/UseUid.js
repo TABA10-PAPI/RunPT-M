@@ -19,7 +19,7 @@ export const useUid = () => {
       const storedUid = await AsyncStorage.getItem("uid");
       setUidState(storedUid);
     } catch (error) {
-      console.error("[useUid] uid 로드 실패:", error);
+      // uid 로드 실패
     } finally {
       setIsLoading(false);
     }
@@ -31,7 +31,7 @@ export const useUid = () => {
       await AsyncStorage.setItem("uid", String(newUid));
       setUidState(String(newUid));
     } catch (error) {
-      console.error("[useUid] uid 저장 실패:", error);
+      // uid 저장 실패
     }
   };
 
@@ -41,7 +41,7 @@ export const useUid = () => {
       await AsyncStorage.removeItem("uid");
       setUidState(null);
     } catch (error) {
-      console.error("[useUid] uid 삭제 실패:", error);
+      // uid 삭제 실패
     }
   };
 

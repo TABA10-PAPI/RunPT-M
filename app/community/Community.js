@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
 import { palette } from "@styles/globalStyles";
@@ -18,10 +18,13 @@ import ScreenHeader from "@components/ScreenHeader";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import PostCard from "./components/PostCard";
 import NewPostPopUp from "./components/NewPostPopUp";
+import Icon from "react-native-vector-icons/Feather";
 
-const iconNewPost = require("@assets/community/new_post.png");
-const iconSearch = require("@assets/community/search.png");
-
+/**
+ * 커뮤니티 게시물 목록 화면
+ * - 게시물 목록을 표시하고 새 게시물 작성 기능 제공
+ * - 검색 기능 (현재 미구현)
+ */
 export default function Community() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -32,14 +35,12 @@ export default function Community() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
 
-  // 페이스 문자열을 파싱하여 분 단위로 변환
-  // 지원 형식: "6'30"", "6'30", "5:30", "5:30초"
+  // 페이스 문자열을 분 단위로 변환 (예: "6'30"" -> 6.5분)
   const parsePaceToMinutes = (paceString) => {
     if (!paceString || typeof paceString !== "string") {
       return 0;
     }
     
-    // "6'30"" 또는 "6'30" 형식 파싱 (예: 6'30")
     let match = paceString.match(/(\d+)'(\d+)"/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -47,7 +48,6 @@ export default function Community() {
       return minutes + seconds / 60;
     }
     
-    // "6'30" 형식 파싱 (따옴표 없음)
     match = paceString.match(/(\d+)'(\d+)/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -55,7 +55,6 @@ export default function Community() {
       return minutes + seconds / 60;
     }
     
-    // "5:30" 또는 "5:30초" 형식 파싱
     match = paceString.match(/(\d+):(\d+)/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -66,7 +65,7 @@ export default function Community() {
     return 0;
   };
 
-  // 거리와 페이스로부터 예상 소요시간 계산 (분)
+  // 거리와 페이스로부터 예상 소요시간 계산
   const calculateDuration = (distance, pace) => {
     const distanceNum = Number(distance) || 0;
     const paceInMinutes = parsePaceToMinutes(pace);
@@ -79,23 +78,36 @@ export default function Community() {
     return `${Math.round(totalMinutes)}분`;
   };
 
-  // API 응답을 PostCard 형식으로 변환
-  const transformPostData = (apiPost) => {
-    // 댓글 개수: API 응답에 comments 필드가 있으면 그 길이를 사용하고, 
-    // 없으면 commentCount나 다른 필드를 확인, 모두 없으면 0
-    let commentCount = 0;
-    if (apiPost.comments && Array.isArray(apiPost.comments)) {
-      commentCount = apiPost.comments.length;
-    } else if (apiPost.commentCount !== undefined) {
-      commentCount = Number(apiPost.commentCount) || 0;
-    } else if (apiPost.comments !== undefined) {
-      // comments가 숫자일 수도 있음
-      commentCount = Number(apiPost.comments) || 0;
+  // 현재 사용자의 게시물 참가 여부 확인
+  const checkUserParticipation = async (communityId, currentUid) => {
+    if (!communityId || !currentUid) {
+      return false;
     }
 
+    try {
+      const response = await apiClient.post("/community/checkparticipate", {
+        uid: Number(currentUid),
+        communityid: Number(communityId),
+      });
+
+      if (response.data?.code === "SU" && Array.isArray(response.data.participates)) {
+        return response.data.participates.some(
+          (participant) => Number(participant.uid) === Number(currentUid)
+        );
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // API 응답 데이터를 PostCard 형식으로 변환
+  const transformPostData = async (apiPost) => {
     const distance = apiPost.distance || 0;
     const pace = apiPost.targetpace || "";
     const duration = calculateDuration(distance, pace);
+    const commentCount = Number(apiPost.commentCount) || 0;
+    const isParticipated = await checkUserParticipation(apiPost.id, uid);
 
     return {
       id: String(apiPost.id || ""),
@@ -111,18 +123,17 @@ export default function Community() {
       timestamp: apiPost.createAt || "",
       tier: apiPost.tier || "UNRANKED",
       participateuser: apiPost.participateuser || 0,
-      isParticipated: false, // TODO: 백엔드에서 현재 사용자의 참가 여부를 확인해야 함
-      // API 원본 데이터 유지
+      isParticipated: isParticipated,
       apiData: apiPost,
     };
   };
 
   // 게시물 목록 가져오기
   const fetchPosts = async () => {
-    if (!uid) {
-      setIsLoading(false);
-      return;
-    }
+      if (!uid) {
+        setIsLoading(false);
+        return;
+      }
 
     try {
       setIsLoading(true);
@@ -140,7 +151,8 @@ export default function Community() {
       }
 
       if (Array.isArray(communitys)) {
-        const transformedPosts = communitys.map(transformPostData);
+        const transformedPostsPromises = communitys.map(post => transformPostData(post));
+        const transformedPosts = await Promise.all(transformedPostsPromises);
         setPosts(transformedPosts);
       } else {
         setPosts([]);
@@ -159,16 +171,24 @@ export default function Community() {
     }
   }, [uid]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (uid) {
+        fetchPosts();
+      }
+    }, [uid])
+  );
+
   const handleNewPostPress = () => {
     setIsNewPostVisible(true);
   };
 
   const handlePostSubmit = async () => {
-    // NewPostPopUp에서 이미 API 호출을 했으므로, 여기서는 목록만 새로고침
     await fetchPosts();
     setIsNewPostVisible(false);
   };
 
+  // 검색 기능 (현재 미구현)
   const handleSearch = (text) => {
     setSearchText(text);
     // TODO: 검색 기능은 백엔드 API가 준비되면 구현
@@ -188,7 +208,7 @@ export default function Community() {
                 onPress={handleNewPostPress}
                 activeOpacity={0.7}
               >
-                <Image source={iconNewPost} style={styles.newPostIcon} />
+                <Icon name="edit" size={15} color={palette.green} />
               </TouchableOpacity>
             }
           />
@@ -204,11 +224,7 @@ export default function Community() {
               onChangeText={handleSearch}
             />
             <TouchableOpacity style={styles.searchIconContainer}>
-              <Image
-                source={iconSearch}
-                style={styles.searchIconImage}
-                resizeMode="contain"
-              />
+              <Icon name="search" size={15} color={palette.grayLight} />
             </TouchableOpacity>
           </View>
         </View>
@@ -220,7 +236,7 @@ export default function Community() {
         ) : (
           <FlatList
             data={posts}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : `post-${index}`}
             renderItem={renderPost}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 100 }}
@@ -255,12 +271,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  newPostIcon: {
-    width: 14.79,
-    height: 14.79,
-    tintColor: palette.green,
-  },
-
   searchRow: {
     marginBottom: 16,
     flexDirection: "row",
@@ -287,11 +297,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     justifyContent: "center",
     alignItems: "center",
-  },
-  searchIconImage: {
-    width: 18,
-    height: 18,
-    tintColor: palette.grayLight,
   },
   loadingContainer: {
     flex: 1,

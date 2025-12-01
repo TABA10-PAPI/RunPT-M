@@ -1,4 +1,9 @@
-// plugins/withKakao.js
+/**
+ * 카카오 로그인 플러그인
+ * - AndroidManifest에 카카오 Activity 추가
+ * - build.gradle에 카카오 Maven 저장소 추가
+ * - strings.xml에 카카오 앱 키 추가
+ */
 const {
     withAndroidManifest,
     withProjectBuildGradle,
@@ -7,6 +12,7 @@ const {
 const fs = require("fs");
 const path = require("path");
   
+  // AndroidManifest에 카카오 로그인 Activity 추가
   function addKakaoActivityToManifest(androidManifest) {
     const app = androidManifest.application?.[0];
     if (!app) return androidManifest;
@@ -75,6 +81,7 @@ const path = require("path");
   
   const KAKAO_MAVEN = 'maven { url "https://devrepo.kakao.com/nexus/content/groups/public/" }';
   
+  // build.gradle에 카카오 Maven 저장소 추가
   function addKakaoRepoToGradle(gradle) {
     let contents = gradle.contents;
   
@@ -95,8 +102,7 @@ const path = require("path");
         }
       );
     }
-  
-    // buildscript.repositories에도 추가 (이미 있으면 스킵)
+
     if (contents.includes("buildscript")) {
       contents = contents.replace(
         /(buildscript\s*\{[^}]*repositories\s*\{)/,
@@ -113,6 +119,7 @@ const path = require("path");
     return gradle;
   }
   
+  // strings.xml에 카카오 앱 키 추가
   function addKakaoAppKeyToStringsXml(config) {
     const stringsXmlPath = path.join(
       config.modRequest.platformProjectRoot,
@@ -120,7 +127,6 @@ const path = require("path");
     );
   
     if (!fs.existsSync(stringsXmlPath)) {
-      console.warn(`strings.xml not found at ${stringsXmlPath}`);
       return config;
     }
   
@@ -128,7 +134,6 @@ const path = require("path");
     const kakaoAppKey = process.env.EXPO_PUBLIC_KAKAO_API_KEY_MOBILE || "";
   
     if (!kakaoAppKey) {
-      console.warn('EXPO_PUBLIC_KAKAO_API_KEY_MOBILE이 설정되지 않았습니다.');
       return config;
     }
 
@@ -155,20 +160,17 @@ const path = require("path");
   }
   
   const withKakao = (config) => {
-    // AndroidManifest 수정
     config = withAndroidManifest(config, (config) => {
       const androidManifest = config.modResults.manifest;
       config.modResults.manifest = addKakaoActivityToManifest(androidManifest);
       return config;
     });
-  
-    // android/build.gradle 수정 (루트 gradle)
+
     config = withProjectBuildGradle(config, (config) => {
       config.modResults = addKakaoRepoToGradle(config.modResults);
       return config;
     });
-  
-    // strings.xml에 카카오 앱 키 추가
+
     config = withDangerousMod(config, [
       "android",
       (config) => addKakaoAppKeyToStringsXml(config),

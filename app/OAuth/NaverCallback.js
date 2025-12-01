@@ -45,11 +45,6 @@ export default function NaverCallback() {
           date,
         };
         
-        console.log("[NaverCallback] 백엔드로 전송하는 데이터:", {
-          accessToken: accessToken ? `${accessToken.substring(0, 20)}...` : "없음",
-          date,
-        });
-        
         // 백엔드로 토큰 전송
         const response = await apiClient.post(NAVER_CALLBACK_URL, requestData);
 

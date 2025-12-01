@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Image,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Feather";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
@@ -27,13 +27,13 @@ import EditPostPopUp from "./components/EditPostPopUp";
 import DeleteConfirmPopUp from "./components/DeleteConfirmPopUp";
 import ParticipantsPopUp from "./components/ParticipantsPopUp";
 
-const iconBack = require("@assets/community/arrow_left.png");
-const iconSend = require("@assets/community/sendButton.png");
-const iconMenu = require("@assets/community/menu.png");
-// TODO: 이미지 추가 필요
-// const iconProfile = require('@assets/profile_placeholder.png'); // 프로필 사진
-
-// Mock data - 실제로는 route.params에서 받아와야 함
+/**
+ * 게시물 상세 화면
+ * - 게시물 상세 정보 표시
+ * - 댓글 목록 및 댓글 작성 기능
+ * - 게시물 수정/삭제 기능 (작성자만)
+ * - 참가자 목록 확인 기능
+ */
 const MOCK_POST = {
   id: "1",
   name: "홍길동",
@@ -99,8 +99,6 @@ export default function DetailPost() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  
-  // 팝업 상태 관리
   const [isMenuPopupVisible, setIsMenuPopupVisible] = useState(false);
   const [isEditPopupVisible, setIsEditPopupVisible] = useState(false);
   const [isDeleteConfirmVisible, setIsDeleteConfirmVisible] = useState(false);
@@ -109,14 +107,20 @@ export default function DetailPost() {
   const [isCommentDeleteConfirmVisible, setIsCommentDeleteConfirmVisible] = useState(false);
 
   const communityId = route.params?.post?.id || route.params?.post?.apiData?.id;
+  const [isAuthor, setIsAuthor] = useState(false);
   
-  // 작성자 확인
-  const isAuthor = uid && post.apiData?.uid && Number(uid) === Number(post.apiData.uid);
+  useEffect(() => {
+    if (uid && post?.apiData?.uid) {
+      const authorUid = Number(post.apiData.uid);
+      const currentUid = Number(uid);
+      setIsAuthor(authorUid === currentUid);
+    } else {
+      setIsAuthor(false);
+    }
+  }, [uid, post?.apiData?.uid, post?.id]);
   
-  // BottomNavigationBar 높이 계산 (paddingTop 6 + navItems paddingBottom 12 + navItem paddingVertical 16 + 아이콘 28 + paddingBottom 6 = 68)
   const bottomNavBarHeight = 68 + insets.bottom;
 
-  // 키보드 show/hide 이벤트 처리
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -137,14 +141,12 @@ export default function DetailPost() {
     };
   }, []);
 
-  // 페이스 문자열을 파싱하여 분 단위로 변환
-  // 지원 형식: "6'30"", "6'30", "5:30", "5:30초"
+  // 페이스 문자열을 분 단위로 변환
   const parsePaceToMinutes = (paceString) => {
     if (!paceString || typeof paceString !== "string") {
       return 0;
     }
     
-    // "6'30"" 또는 "6'30" 형식 파싱 (예: 6'30")
     let match = paceString.match(/(\d+)'(\d+)"/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -152,7 +154,6 @@ export default function DetailPost() {
       return minutes + seconds / 60;
     }
     
-    // "6'30" 형식 파싱 (따옴표 없음)
     match = paceString.match(/(\d+)'(\d+)/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -160,7 +161,6 @@ export default function DetailPost() {
       return minutes + seconds / 60;
     }
     
-    // "5:30" 또는 "5:30초" 형식 파싱
     match = paceString.match(/(\d+):(\d+)/);
     if (match) {
       const minutes = Number(match[1]) || 0;
@@ -171,7 +171,7 @@ export default function DetailPost() {
     return 0;
   };
 
-  // 거리와 페이스로부터 예상 소요시간 계산 (분)
+  // 거리와 페이스로부터 예상 소요시간 계산
   const calculateDuration = (distance, pace) => {
     const distanceNum = Number(distance) || 0;
     const paceInMinutes = parsePaceToMinutes(pace);
@@ -184,21 +184,36 @@ export default function DetailPost() {
     return `${Math.round(totalMinutes)}분`;
   };
 
-  // API 응답을 PostCard 형식으로 변환
-  const transformPostData = (apiPost) => {
+  // 현재 사용자의 게시물 참가 여부 확인
+  const checkUserParticipation = async (communityId, currentUid) => {
+    if (!communityId || !currentUid) {
+      return false;
+    }
+
+    try {
+      const response = await apiClient.post("/community/checkparticipate", {
+        uid: Number(currentUid),
+        communityid: Number(communityId),
+      });
+
+      if (response.data?.code === "SU" && Array.isArray(response.data.participates)) {
+        return response.data.participates.some(
+          (participant) => Number(participant.uid) === Number(currentUid)
+        );
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // API 응답 데이터를 PostCard 형식으로 변환
+  const transformPostData = async (apiPost) => {
     const distance = apiPost.distance || 0;
     const pace = apiPost.targetpace || "";
     const duration = calculateDuration(distance, pace);
-
-    // 댓글 개수 계산 (Community.js와 동일한 로직)
-    let commentCount = 0;
-    if (apiPost.comments && Array.isArray(apiPost.comments)) {
-      commentCount = apiPost.comments.length;
-    } else if (apiPost.commentCount !== undefined) {
-      commentCount = Number(apiPost.commentCount) || 0;
-    } else if (apiPost.comments !== undefined) {
-      commentCount = Number(apiPost.comments) || 0;
-    }
+    const commentCount = Number(apiPost.commentCount) || 0;
+    const isParticipated = await checkUserParticipation(apiPost.id, uid);
 
     return {
       id: String(apiPost.id || ""),
@@ -212,14 +227,26 @@ export default function DetailPost() {
       likes: 0,
       comments: commentCount,
       description: apiPost.shortinfo || "",
-      timestamp: apiPost.createAt || "",
+      timestamp: apiPost.createAt
+        ? new Date(apiPost.createAt)
+            .toLocaleString("ko-KR", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+            .replace(/\./g, "/")
+            .replace(/,/g, "")
+        : "",
       tier: apiPost.tier || "UNRANKED",
       participateuser: apiPost.participateuser || 0,
+      isParticipated: isParticipated,
       apiData: apiPost,
     };
   };
 
-  // 댓글 데이터 변환
+  // 댓글 API 응답 데이터를 CommentItem 형식으로 변환
   const transformCommentData = (apiComment) => {
     return {
       id: String(apiComment.id || ""),
@@ -238,7 +265,7 @@ export default function DetailPost() {
             .replace(/\./g, "/")
             .replace(/,/g, "")
         : "",
-      apiData: apiComment, // 원본 데이터 유지 (uid 확인용)
+      apiData: apiComment,
     };
   };
 
@@ -250,25 +277,19 @@ export default function DetailPost() {
 
     try {
       setIsLoading(true);
-      // POST /community/detail
       const response = await apiClient.post("/community/detail", {
         id: Number(communityId),
       });
 
-      // 응답 형식: {code, message, id, uid, nickname, tier, ...comments: [...]}
       const apiPost = response.data;
-      
-      // 댓글 목록 변환
-      let transformedComments = [];
-      if (Array.isArray(apiPost.comments)) {
-        transformedComments = apiPost.comments.map(transformCommentData);
-      }
+      const transformedComments = Array.isArray(apiPost.comments)
+        ? apiPost.comments.map(transformCommentData)
+        : [];
       setComments(transformedComments);
       
-      // 게시물 데이터 변환 (댓글 수와 참가자 수 포함)
-      const transformedPost = transformPostData(apiPost);
-      // 댓글 수는 실제 comments 배열 길이로 업데이트
-      transformedPost.comments = transformedComments.length;
+      const transformedPost = await transformPostData(apiPost);
+      transformedPost.comments = Number(apiPost.commentCount) || transformedComments.length;
+      transformedPost.participateuser = apiPost.participateuser || 0;
       setPost(transformedPost);
     } catch (error) {
       Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
@@ -283,10 +304,17 @@ export default function DetailPost() {
     }
   }, [communityId]);
 
+  useEffect(() => {
+    if (uid && communityId) {
+      fetchPostDetail();
+    }
+  }, [uid]);
+
   const handleBack = () => {
     navigation.goBack();
   };
 
+  // 댓글 작성
   const handleSubmitComment = async () => {
     if (!commentText.trim()) {
       return;
@@ -313,8 +341,6 @@ export default function DetailPost() {
       });
 
       setCommentText("");
-
-      // 게시물 상세 정보 새로고침 (댓글 수 업데이트 및 새 댓글 표시)
       await fetchPostDetail();
     } catch (error) {
       Alert.alert("오류", error.response?.data?.message || "댓글 작성에 실패했습니다.");
@@ -331,17 +357,10 @@ export default function DetailPost() {
     }
 
     try {
-      // TODO: 게시물 삭제 API 호출 (백엔드 명세 확인 필요)
-      // 예상: DELETE /community/{id} 또는 POST /community/delete
-      try {
-        await apiClient.delete(`/community/${communityId}`);
-      } catch (deleteError) {
-        // DELETE가 실패하면 POST로 시도
-        await apiClient.post("/community/delete", { 
-          id: Number(communityId), 
-          uid: Number(uid) 
-        });
-      }
+      await apiClient.post("/community/delete", {
+        uid: Number(uid),
+        id: Number(communityId),
+      });
       
       Alert.alert("완료", "게시물이 삭제되었습니다.", [
         {
@@ -354,33 +373,35 @@ export default function DetailPost() {
     }
   };
 
-  // 게시물 수정 완료
   const handleEditPostComplete = async () => {
     await fetchPostDetail();
     setIsEditPopupVisible(false);
   };
 
+  // 댓글 작성자인지 확인
+  const isCommentAuthor = (comment) => {
+    if (!uid || !comment?.apiData?.uid) {
+      return false;
+    }
+    return Number(uid) === Number(comment.apiData.uid);
+  };
+
   // 댓글 삭제
   const handleDeleteComment = async () => {
-    if (!commentToDelete || !uid) {
+    if (!commentToDelete || !uid || !communityId) {
       return;
     }
 
     try {
-      // TODO: 댓글 삭제 API 호출 (백엔드 명세 확인 필요)
-      // 예상: DELETE /community/comment/{id} 또는 POST /community/comment/delete
-      try {
-        await apiClient.delete(`/community/comment/${commentToDelete.id}`);
-      } catch (deleteError) {
-        // DELETE가 실패하면 POST로 시도
-        await apiClient.post("/community/comment/delete", { 
-          id: Number(commentToDelete.id),
-          uid: Number(uid)
-        });
-      }
+      await apiClient.post("/community/comment/delete", {
+        uid: Number(uid),
+        communityid: Number(communityId),
+        commentid: Number(commentToDelete.id),
+      });
       
       await fetchPostDetail();
       setCommentToDelete(null);
+      setIsCommentDeleteConfirmVisible(false);
     } catch (error) {
       Alert.alert("오류", error.response?.data?.message || "댓글 삭제에 실패했습니다.");
     }
@@ -394,7 +415,6 @@ export default function DetailPost() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <View style={styles.container}>
-          {/* 헤더 */}
           <View style={styles.headerContainer}>
             <ScreenHeader
               title="Community"
@@ -404,11 +424,7 @@ export default function DetailPost() {
                   onPress={handleBack}
                   activeOpacity={0.7}
                 >
-                  <Image
-                    source={iconBack}
-                    style={styles.backIcon}
-                    resizeMode="contain"
-                  />
+                  <Icon name="arrow-left" size={24} color={palette.white} />
                 </TouchableOpacity>
               }
               rightContent={
@@ -418,11 +434,7 @@ export default function DetailPost() {
                     activeOpacity={0.7}
                     onPress={() => setIsMenuPopupVisible(true)}
                   >
-                    <Image
-                      source={iconMenu}
-                      style={styles.menuIcon}
-                      resizeMode="contain"
-                    />
+                    <Icon name="menu" size={24} color={palette.white} />
                   </TouchableOpacity>
                 ) : null
               }
@@ -435,12 +447,17 @@ export default function DetailPost() {
             </View>
           ) : (
             <View style={styles.contentWrapper}>
-              <PostCard
-                post={post}
-                variant="detail"
-                disablePress={true}
-                onShowParticipants={() => setIsParticipantsPopupVisible(true)}
-              />
+              {post && (
+                <PostCard
+                  post={post}
+                  variant="detail"
+                  disablePress={true}
+                  onShowParticipants={() => setIsParticipantsPopupVisible(true)}
+                  onParticipateChange={async () => {
+                    await fetchPostDetail();
+                  }}
+                />
+              )}
               <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -450,28 +467,22 @@ export default function DetailPost() {
                 {/* 댓글 섹션 */}
                 <View style={styles.commentsSection}>
                   <Text style={styles.commentsHeader}>댓글 {comments.length}</Text>
-                  {comments.map((comment) => {
-                    // 댓글 작성자 확인
-                    const isCommentAuthor = uid && comment.apiData?.uid && 
-                      Number(uid) === Number(comment.apiData.uid);
-                    return (
-                      <CommentItem
-                        key={comment.id}
-                        comment={comment}
-                        canDelete={isCommentAuthor}
-                        onDelete={(comment) => {
-                          setCommentToDelete(comment);
-                          setIsCommentDeleteConfirmVisible(true);
-                        }}
-                      />
-                    );
-                  })}
+                  {comments.map((comment, index) => (
+                    <CommentItem
+                      key={comment.id ? `${comment.id}-${index}` : `comment-${index}`}
+                      comment={comment}
+                      canDelete={isCommentAuthor(comment)}
+                      onDelete={(comment) => {
+                        setCommentToDelete(comment);
+                        setIsCommentDeleteConfirmVisible(true);
+                      }}
+                    />
+                  ))}
                 </View>
               </ScrollView>
             </View>
           )}
 
-          {/* 댓글 입력 */}
           {!isLoading && (
             <View style={[
               styles.commentInputContainer, 
@@ -480,14 +491,6 @@ export default function DetailPost() {
               }
             ]}>
             <View style={styles.commentInputBox}>
-              <View style={styles.inputProfileCircle}>
-                {/* TODO: 프로필 이미지 추가 필요 */}
-                {/* <Image
-                  source={require('@assets/profile_placeholder.png')}
-                  style={styles.inputProfileImage}
-                  resizeMode="cover"
-                /> */}
-              </View>
               <TextInput
                 placeholder={`${post.name} 님에게 댓글`}
                 placeholderTextColor={palette.grayPlaceholder}
@@ -504,11 +507,7 @@ export default function DetailPost() {
                 {isSubmittingComment ? (
                   <ActivityIndicator size="small" color={palette.green} />
                 ) : (
-                  <Image
-                    source={iconSend}
-                    style={styles.sendIcon}
-                    resizeMode="contain"
-                  />
+                  <Icon name="send" size={24} color={palette.green} />
                 )}
               </TouchableOpacity>
             </View>
@@ -518,7 +517,6 @@ export default function DetailPost() {
       </KeyboardAvoidingView>
       <BottomNavigationBar navigation={navigation} currentRoute="Community" />
       
-      {/* 게시물 메뉴 팝업 */}
       <PostMenuPopUp
         visible={isMenuPopupVisible}
         onClose={() => setIsMenuPopupVisible(false)}
@@ -526,7 +524,6 @@ export default function DetailPost() {
         onDelete={() => setIsDeleteConfirmVisible(true)}
       />
 
-      {/* 게시물 수정 팝업 */}
       <EditPostPopUp
         visible={isEditPopupVisible}
         onClose={() => setIsEditPopupVisible(false)}
@@ -534,7 +531,6 @@ export default function DetailPost() {
         post={post}
       />
 
-      {/* 게시물 삭제 확인 팝업 */}
       <DeleteConfirmPopUp
         visible={isDeleteConfirmVisible}
         onClose={() => setIsDeleteConfirmVisible(false)}
@@ -543,7 +539,6 @@ export default function DetailPost() {
         message="삭제된 게시물은 복구할 수 없습니다."
       />
 
-      {/* 댓글 삭제 확인 팝업 */}
       <DeleteConfirmPopUp
         visible={isCommentDeleteConfirmVisible}
         onClose={() => {
@@ -555,7 +550,6 @@ export default function DetailPost() {
         message="삭제된 댓글은 복구할 수 없습니다."
       />
 
-      {/* 참가자 목록 팝업 */}
       <ParticipantsPopUp
         visible={isParticipantsPopupVisible}
         onClose={() => setIsParticipantsPopupVisible(false)}
@@ -583,45 +577,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     zIndex: 10,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
   },
-  backIcon: {
-    width: 24,
-    height: 24,
-    tintColor: palette.white,
-  },
-  backText: {
-    fontSize: 24,
-    color: palette.white,
-    fontWeight: "600",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: palette.white,
-    letterSpacing: 0.4,
-    ...typography.bold,
-  },
   menuButton: {
     width: 40,
     height: 40,
     justifyContent: "center",
     alignItems: "center",
-  },
-  menuIcon: {
-    width: 24,
-    height: 24,
-    tintColor: palette.white,
   },
   contentWrapper: {
     flex: 1,
@@ -631,154 +597,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
-  },
-  postHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  profileCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: palette.grayMedium,
-    overflow: "hidden",
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-  },
-  userInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  nickname: {
-    color: palette.white,
-    fontSize: 16,
-    fontWeight: "700",
-    ...typography.bold,
-  },
-  trophyIcon: {
-    fontSize: 16,
-    marginLeft: 6,
-  },
-  location: {
-    color: palette.grayLight,
-    fontSize: 12,
-    marginTop: 4,
-  },
-  locationTagContainer: {
-    marginLeft: "auto",
-  },
-  locationTag: {
-    color: palette.white,
-    fontSize: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: palette.gray,
-    borderRadius: 12,
-    fontWeight: "600",
-    ...typography.semibold,
-  },
-  postContent: {
-    backgroundColor: palette.gray,
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 20,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    flex: 1,
-  },
-  infoIcon: {
-    fontSize: 18,
-    color: palette.red,
-  },
-  infoContent: {
-    marginLeft: 8,
-  },
-  infoLabel: {
-    color: palette.grayLight,
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  infoValue: {
-    color: palette.white,
-    fontSize: 14,
-    fontWeight: "600",
-    ...typography.semibold,
-  },
-  description: {
-    color: palette.grayLight,
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 16,
-    paddingVertical: 12,
-  },
-  statBlock: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statLabel: {
-    color: palette.green,
-    fontSize: 12,
-    marginBottom: 6,
-    fontWeight: "600",
-    ...typography.semibold,
-  },
-  statValue: {
-    color: palette.white,
-    fontSize: 18,
-    fontWeight: "700",
-    ...typography.bold,
-  },
-  bottomRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: palette.grayDark,
-  },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  commentRow: {
-    marginLeft: 16,
-  },
-  iconThumb: {
-    width: 17,
-    height: 19,
-  },
-  iconComment: {
-    width: 16,
-    height: 16,
-  },
-  bottomText: {
-    color: palette.white,
-    fontSize: 13,
-    marginLeft: 6,
-    fontWeight: "400",
-  },
-  timestamp: {
-    color: palette.grayLight,
-    fontSize: 12,
-    marginLeft: "auto",
   },
   commentsSection: {
     marginBottom: 20,
@@ -805,18 +623,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     minHeight: 44,
   },
-  inputProfileCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: palette.grayMedium,
-    overflow: "hidden",
-    marginRight: 12,
-  },
-  inputProfileImage: {
-    width: "100%",
-    height: "100%",
-  },
   commentInput: {
     flex: 1,
     color: palette.white,
@@ -825,16 +631,6 @@ const styles = StyleSheet.create({
     padding: 0,
     paddingVertical: 8,
   },
-  submitButton: {
-    marginLeft: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sendIcon: {
-    width: 24,
-    height: 24,
-    tintColor: palette.green,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -842,3 +638,4 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
 });
+

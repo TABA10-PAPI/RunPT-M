@@ -1,43 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ScrollView, ActivityIndicator, Alert } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import apiClient from "@config/api";
 import { getTierImage } from "@utils/tierImages";
+import { useUid } from "@hooks/UseUid";
 
-const iconX = require("@assets/community/X.png");
-const iconMenuSeparator = require("@assets/community/Menu_Separator.png");
-
+/**
+ * 참가자 목록 팝업 컴포넌트
+ * - 게시물에 참가한 사용자 목록 표시
+ * - 참가자 닉네임과 티어 표시
+ */
 export default function ParticipantsPopUp({ visible, onClose, communityId }) {
+  const { uid } = useUid();
   const [participants, setParticipants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (visible && communityId) {
+    if (visible && communityId && uid) {
       fetchParticipants();
     }
-  }, [visible, communityId]);
+  }, [visible, communityId, uid]);
 
+  // 참가자 목록 가져오기
   const fetchParticipants = async () => {
-    if (!communityId) {
+    if (!communityId || !uid) {
       return;
     }
 
     try {
       setIsLoading(true);
       
-      // TODO: 백엔드 API 명세 확인 필요
-      // 예상: POST /community/participants 또는 GET /community/{id}/participants
-      // 임시로 빈 배열 표시 (백엔드 API 연동 필요)
-      
-      // const response = await apiClient.post("/community/participants", {
-      //   communityid: Number(communityId),
-      // });
-      // setParticipants(response.data?.participants || []);
-      
-      // 임시: 빈 목록
-      setParticipants([]);
+      const response = await apiClient.post("/community/checkparticipate", {
+        uid: Number(uid),
+        communityid: Number(communityId),
+      });
+
+      if (response.data?.code === "SU" && Array.isArray(response.data.participates)) {
+        setParticipants(response.data.participates);
+      } else {
+        setParticipants([]);
+      }
     } catch (error) {
-      console.error("[ParticipantsPopUp] 참가자 목록 가져오기 실패:", error);
+      Alert.alert("오류", "참가자 목록을 불러오는데 실패했습니다.");
       setParticipants([]);
     } finally {
       setIsLoading(false);
@@ -69,20 +74,11 @@ export default function ParticipantsPopUp({ visible, onClose, communityId }) {
               onPress={onClose}
               activeOpacity={0.7}
             >
-              <Image
-                source={iconX}
-                style={styles.closeIcon}
-                tintColor={palette.white}
-                resizeMode="contain"
-              />
+              <Icon name="x-circle" size={20} color={palette.white} />
             </TouchableOpacity>
           </View>
           
-          <Image
-            source={iconMenuSeparator}
-            style={styles.separator}
-            resizeMode="contain"
-          />
+          <View style={styles.separator} />
 
           {isLoading ? (
             <View style={styles.loadingContainer}>
@@ -99,10 +95,8 @@ export default function ParticipantsPopUp({ visible, onClose, communityId }) {
               showsVerticalScrollIndicator={false}
             >
               {participants.map((participant, index) => (
-                <View key={participant.uid || index} style={styles.participantItem}>
-                  <View style={styles.participantProfileCircle}>
-                    {/* TODO: 프로필 이미지 */}
-                  </View>
+                <View key={participant.id ? `${participant.id}-${index}` : participant.uid ? `${participant.uid}-${index}` : `participant-${index}`} style={styles.participantItem}>
+                  <View style={styles.participantProfileCircle} />
                   <View style={styles.participantInfo}>
                     <Text style={styles.participantName}>{participant.nickname || "사용자"}</Text>
                     {participant.tier && (
@@ -158,15 +152,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeIcon: {
-    width: 20,
-    height: 20,
-  },
   separator: {
+    flex: 17,
+    borderBottomWidth: 1,
     width: "100%",
-    height: 10,
+    borderBottomColor: '#E1E2E4',
     marginBottom: 16,
-    tintColor: palette.white,
   },
   scrollView: {
     maxHeight: 400,

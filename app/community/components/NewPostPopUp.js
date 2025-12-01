@@ -9,18 +9,20 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
 import { palette, typography } from "@styles/globalStyles";
 import FilterChip from "./FilterChip";
 
-const iconX = require("@assets/community/X.png");
-const iconMenuSeparator = require("@assets/community/Menu_Separator.png");
-
+/**
+ * 새 게시물 작성 팝업
+ * - 게시물 작성 폼 (제목, 장소, 출발시간, 내용, 거리, 페이스, 성별 필터)
+ * - 거리와 페이스로부터 자동으로 소요시간 계산
+ */
 export default function NewPostPopUp({ visible, onClose, onSubmit }) {
   const { uid } = useUid();
   const [title, setTitle] = useState("");
@@ -40,7 +42,7 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
   ];
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 거리와 페이스로부터 예상 소요시간 계산 (분)
+  // 거리와 페이스로부터 예상 소요시간 자동 계산
   const calculatedDuration = useMemo(() => {
     const distanceNum = Number(distance) || 0;
     const paceMinNum = Number(paceMin) || 0;
@@ -50,25 +52,19 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
       return "";
     }
     
-    // 페이스를 분 단위로 변환 (예: 6'30" = 6 + 30/60 = 6.5분)
     const paceInMinutes = paceMinNum + paceSecNum / 60;
-    
-    // 총 소요시간 계산: 거리(km) × 페이스(분/km)
     const totalMinutes = distanceNum * paceInMinutes;
-    
-    // 소수점 반올림
     return Math.round(totalMinutes).toString();
   }, [distance, paceMin, paceSec]);
 
-  // duration을 자동 계산된 값으로 설정
   useEffect(() => {
     if (calculatedDuration) {
       setDuration(calculatedDuration);
     }
   }, [calculatedDuration]);
 
+  // 게시물 작성 제출
   const handleSubmit = async () => {
-    // 유효성 검사
     if (!title.trim() || !place.trim() || !startTime.trim() || !content.trim()) {
       Alert.alert("입력 오류", "모든 필드를 입력해주세요.");
       return;
@@ -84,7 +80,6 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
       return;
     }
 
-    // uid를 숫자로 변환
     const uidNumber = Number(uid);
     if (isNaN(uidNumber) || uidNumber <= 0) {
       Alert.alert("오류", "유효하지 않은 사용자 정보입니다. 다시 로그인해주세요.");
@@ -95,8 +90,6 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
 
     try {
       const targetpace = `${paceMin}'${paceSec}"`;
-
-      // 백엔드로 전송할 데이터 준비
       const requestData = {
         uid: uidNumber,
         title: title.trim(),
@@ -108,25 +101,9 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
         shortinfo: content,
       };
 
-      console.log("[NewPostPopUp] 백엔드로 전송하는 데이터:", {
-        ...requestData,
-        uid: uidNumber,
-      });
-
-      // POST /community/add
       await apiClient.post("/community/add", requestData);
       
-      const postData = {
-        title: title.trim(),
-        startpoint: place,
-        distance: Number(distance),
-        starttime: startTime,
-        targetpace: targetpace,
-        targetgender: targetGender,
-        shortinfo: content,
-      };
-      
-      onSubmit(postData);
+      onSubmit();
       handleClose();
     } catch (error) {
       Alert.alert(
@@ -138,8 +115,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
     }
   };
 
+  // 팝업 닫기 및 폼 초기화
   const handleClose = () => {
-    // 폼 초기화
     setTitle("");
     setPlace("");
     setStartTime("");
@@ -182,12 +159,7 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
               onPress={handleClose}
               activeOpacity={0.7}
             >
-              <Image
-                source={iconX}
-                style={styles.closeIcon}
-                tintColor={palette.white}
-                resizeMode="contain"
-              />
+              <Icon name="x-circle" size={24} color={palette.white} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>글 작성하기</Text>
             <TouchableOpacity
@@ -203,11 +175,7 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
             </TouchableOpacity>
 
           </View>
-          <Image
-            source={iconMenuSeparator}
-            style={styles.separator}
-            resizeMode="contain"
-          />
+          <View style={styles.separator} />
 
 
           <ScrollView
@@ -390,16 +358,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeIcon: {
-    width: 24,
-    height: 24,
-  },
   separator: {
-    width: 400,
-    height: 10,
+    flex: 17,
+    borderBottomWidth: 1,
+    width: "100%",
+    borderBottomColor: '#E1E2E4',
     marginBottom: 10,
-    tintColor: palette.white,
-    alignSelf: "center",
   },
   headerTitle: {
     fontSize: 18,

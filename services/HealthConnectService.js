@@ -5,7 +5,12 @@ import {
   } from 'react-native-health-connect';
 import apiClient from '@config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-  
+
+/**
+ * Health Connect 서비스
+ * - Android Health Connect에서 러닝 데이터 읽기
+ * - 거리, 심박수, 시간 데이터를 가져와서 백엔드로 전송
+ */
 const readRunningData = async () => {
   try {
     // uid를 먼저 가져와서 uid별 마지막 처리 시간 관리
@@ -80,19 +85,14 @@ const readRunningData = async () => {
       return null;
     }
 
-    // uid별 마지막 처리 시간 가져오기
     const LAST_PROCESSED_TIME_KEY = `healthConnectLastProcessedTime_${uidNumber}`;
     let lastProcessedTime = await AsyncStorage.getItem(LAST_PROCESSED_TIME_KEY);
-    
-    // 마지막 처리 시간이 없으면 최근 24시간의 데이터만 가져오기
     const rightNow = new Date();
     let filterStartTime = null;
     
     if (lastProcessedTime) {
       filterStartTime = new Date(lastProcessedTime);
-      // 마지막 처리 시간 이후의 데이터만 가져오기 (저장되지 않은 기록만)
     } else {
-      // 처음 실행이면 최근 24시간만
       filterStartTime = new Date(rightNow.getTime() - 24 * 60 * 60 * 1000);
     }
 
@@ -105,7 +105,6 @@ const readRunningData = async () => {
     let distanceData = null;
     let heartRateData = null;
 
-    // Distance 읽기
     if (allowedRecordTypes.has('Distance')) {
       try {
         const result = await readRecords('Distance', { timeRangeFilter });
@@ -114,11 +113,9 @@ const readRunningData = async () => {
           distanceData = records;
         }
       } catch (err) {
-        // 에러 무시
       }
     }
 
-    // HeartRate 읽기
     if (allowedRecordTypes.has('HeartRate')) {
       try {
         const result = await readRecords('HeartRate', { timeRangeFilter });
@@ -254,8 +251,6 @@ const readRunningData = async () => {
       heartRateAvg: heartRateAvg,
     };
 
-    console.log('Health Connect Running Data:', JSON.stringify(result, null, 2));
-
     // 백엔드로 데이터 전송
     const requestData = {
       uid: uidNumber,
@@ -271,16 +266,11 @@ const readRunningData = async () => {
       const responseData = response?.data;
       
       if (responseData && responseData.code === 'SU') {
-        console.log('Health Connect: 러닝 데이터가 성공적으로 저장되었습니다.');
-        
         // 성공적으로 저장되면 해당 uid의 마지막 처리 시간 업데이트 (운동 종료 시간 기준)
         // 다음번에는 이 시간 이후의 기록만 가져오도록 함
         await AsyncStorage.setItem(LAST_PROCESSED_TIME_KEY, exerciseEndTime.toISOString());
-      } else {
-        console.warn('Health Connect: API 응답이 예상과 다릅니다:', responseData);
       }
     } catch (apiError) {
-      console.error('Health Connect: API 전송 실패:', apiError?.response?.data || apiError?.message);
       // API 전송 실패해도 로컬 결과는 반환
     }
 

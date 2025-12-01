@@ -1,10 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, Modal, TouchableOpacity } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 
-const iconX = require("@assets/community/X.png");
-const iconMenuSeparator = require("@assets/community/Menu_Separator.png");
-
+/**
+ * 게시물 메뉴 팝업 컴포넌트
+ * - 게시물 수정/삭제 메뉴 (작성자만 표시)
+ */
 export default function PostMenuPopUp({ visible, onClose, onEdit, onDelete }) {
   if (!visible) {
     return null;
@@ -31,20 +33,11 @@ export default function PostMenuPopUp({ visible, onClose, onEdit, onDelete }) {
               onPress={onClose}
               activeOpacity={0.7}
             >
-              <Image
-                source={iconX}
-                style={styles.closeIcon}
-                tintColor={palette.white}
-                resizeMode="contain"
-              />
+              <Icon name="x-circle" size={20} color={palette.white} />
             </TouchableOpacity>
           </View>
           
-          <Image
-            source={iconMenuSeparator}
-            style={styles.separator}
-            resizeMode="contain"
-          />
+          <View style={styles.separator} />
 
           <View style={styles.menuContainer}>
             <TouchableOpacity
@@ -111,15 +104,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeIcon: {
-    width: 20,
-    height: 20,
-  },
   separator: {
+    flex: 17,
+    borderBottomWidth: 1,
     width: "100%",
-    height: 10,
+    borderBottomColor: '#E1E2E4',
     marginBottom: 12,
-    tintColor: palette.white,
   },
   menuContainer: {
     width: "100%",

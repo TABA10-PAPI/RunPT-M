@@ -1,6 +1,7 @@
-// 티어 이름을 이미지 소스로 매핑하는 유틸리티
-
-// 티어 이미지 매핑
+/**
+ * 티어 이미지 유틸리티
+ * - 티어 이름을 이미지 소스로 변환하는 함수 제공
+ */
 const tierImageMap = {
   UNRANKED: require("@assets/rank/Bronze III.png"),
   "BRONZE I": require("@assets/rank/Bronze I.png"),
@@ -20,25 +21,18 @@ const tierImageMap = {
   CHALLENGER: require("@assets/rank/Challenger.png"),
 };
 
-/**
- * 티어 이름을 이미지 소스로 변환
- * @param {string} tierName - 티어 이름 (예: "DIAMOND", "GOLD I", "UNRANKED")
- * @returns {any} - 이미지 소스 또는 기본 이미지
- */
+// 티어 이름을 이미지 소스로 변환
 export const getTierImage = (tierName) => {
   if (!tierName) {
     return tierImageMap.UNRANKED;
   }
 
-  // 티어 이름을 대문자로 변환하고 공백 제거
   const normalizedTier = String(tierName).toUpperCase().trim();
 
-  // 정확한 매칭
   if (tierImageMap[normalizedTier]) {
     return tierImageMap[normalizedTier];
   }
 
-  // 부분 매칭 (예: "Diamond" -> "DIAMOND")
   const matchingKey = Object.keys(tierImageMap).find(
     (key) => key === normalizedTier || key.replace(/\s+/g, "") === normalizedTier.replace(/\s+/g, "")
   );
@@ -47,7 +41,6 @@ export const getTierImage = (tierName) => {
     return tierImageMap[matchingKey];
   }
 
-  // 매칭되지 않으면 기본 이미지 (UNRANKED)
   return tierImageMap.UNRANKED;
 };
 

@@ -29,15 +29,9 @@ apiClient.interceptors.request.use(
 // 응답 인터셉터: 에러 처리
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`✅ API 응답 성공: ${response.config.method?.toUpperCase()} ${response.config.url}`);
     return response;
   },
   async (error) => {
-    const fullUrl = error.config ? `${error.config.baseURL}${error.config.url}` : "알 수 없음";
-    console.error(`❌ API 응답 실패: ${error.config?.method?.toUpperCase()} ${fullUrl}`);
-    console.error("상태 코드:", error.response?.status);
-    console.error("에러 메시지:", error.message);
-    console.error("에러 데이터:", error.response?.data);
     
     if (error.response?.status === 401) {
       // 토큰 만료 시 로그인 페이지로 이동

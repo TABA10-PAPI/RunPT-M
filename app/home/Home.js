@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -14,13 +15,122 @@ import { palette, typography } from "@styles/globalStyles";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import { Ionicons } from "@expo/vector-icons";
 import readRunningData from "@services/HealthConnectService";
+import apiClient from "@config/api";
+import { useUid } from "@hooks/UseUid";
 
 // Rank badges
-const silverMedal = require("@assets/rank/Silver I.png");
+const rankBadges = {
+  bronze: {
+    I: require("@assets/rank/Bronze I.png"),
+    II: require("@assets/rank/Bronze II.png"),
+    III: require("@assets/rank/Bronze III.png"),
+  },
+  silver: {
+    I: require("@assets/rank/Silver I.png"),
+    II: require("@assets/rank/Silver II.png"),
+    III: require("@assets/rank/Silver III.png"),
+  },
+  gold: {
+    I: require("@assets/rank/Gold I.png"),
+    II: require("@assets/rank/Gold II.png"),
+    III: require("@assets/rank/Gold III.png"),
+  },
+  platinum: {
+    I: require("@assets/rank/Platinum I.png"),
+    II: require("@assets/rank/Platinum II.png"),
+    III: require("@assets/rank/Platinum III.png"),
+  },
+  diamond: require("@assets/rank/Diamond.png"),
+  master: require("@assets/rank/Master.png"),
+  challenger: require("@assets/rank/Challenger.png"),
+};
+
+// tier 문자열을 파싱하여 적절한 뱃지 이미지를 반환
+const getTierBadge = (tier) => {
+  if (!tier) return rankBadges.silver.I; // 기본값
+  
+  const tierLower = tier.toLowerCase();
+  
+  // "gold", "silver" 같은 단순 형식
+  if (tierLower === "diamond") return rankBadges.diamond;
+  if (tierLower === "master") return rankBadges.master;
+  if (tierLower === "challenger") return rankBadges.challenger;
+  
+  // "gold", "silver", "bronze", "platinum" 같은 경우
+  // 기본적으로 I 등급으로 설정 (실제로는 API 응답에 따라 다를 수 있음)
+  if (tierLower.includes("bronze")) {
+    if (tierLower.includes("iii")) return rankBadges.bronze.III;
+    if (tierLower.includes("ii")) return rankBadges.bronze.II;
+    return rankBadges.bronze.I;
+  }
+  if (tierLower.includes("silver")) {
+    if (tierLower.includes("iii")) return rankBadges.silver.III;
+    if (tierLower.includes("ii")) return rankBadges.silver.II;
+    return rankBadges.silver.I;
+  }
+  if (tierLower.includes("gold")) {
+    if (tierLower.includes("iii")) return rankBadges.gold.III;
+    if (tierLower.includes("ii")) return rankBadges.gold.II;
+    return rankBadges.gold.I;
+  }
+  if (tierLower.includes("platinum")) {
+    if (tierLower.includes("iii")) return rankBadges.platinum.III;
+    if (tierLower.includes("ii")) return rankBadges.platinum.II;
+    return rankBadges.platinum.I;
+  }
+  
+  // 기본값
+  return rankBadges.silver.I;
+};
 
 export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
+  //const { uid, isLoading: uidLoading } = useUid();
+  const uid = 12;
+  const uidLoading = false;
+
+  // API 응답 데이터 상태
+  const [homeData, setHomeData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // API 호출 함수
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      if (uidLoading || !uid) {
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // 오늘 날짜를 YYYY-MM-DD 형식으로 변환
+        //const today = new Date().toISOString().split('T')[0];
+        const today = '2025-11-21';
+
+        // API 요청
+        const response = await apiClient.post('/home', {
+          uid: parseInt(uid),
+          date: today,
+        });
+
+        if (response.data.code === 'SU') {
+          setHomeData(response.data);
+        } else {
+          setError(response.data.message || '데이터를 불러오는데 실패했습니다.');
+        }
+      } catch (err) {
+        console.error('Home API Error:', err);
+        setError(err?.response?.data?.message || '서버 오류가 발생했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHomeData();
+  }, [uid, uidLoading]);
 
   // Home 화면이 포커스될 때 HealthConnectService 실행
   useEffect(() => {
@@ -40,14 +150,14 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Mock data
+  // API 데이터 또는 기본값 사용
   const userInfo = {
     name: "홍길동",
-    nickname: "달리는 뉴비",
+    nickname: homeData?.nickname || "달리는 뉴비",
   };
 
-  // TODO: replace with value fetched from backend (0~100)
-  const batteryFromServer = 70;
+  // API에서 받은 battery 값 또는 기본값
+  const batteryFromServer = homeData?.battery ?? 70;
 
   const batteryLevel = useMemo(() => {
     const clamped = Math.max(0, Math.min(100, batteryFromServer));
@@ -66,15 +176,23 @@ export default function Home() {
 
   const completedDays = weeklyData.filter((day) => day.completed).length;
 
-  // First recommendation card (same as Run.js first card)
-  const firstRecommendation = {
-    title: "오늘은 회복 러닝!",
-    description:
-      "어제 10km 러닝으로 피로도가 누적되어 있습니다. 오늘은 회복 러닝을 추천드려요.",
-    distance: "3KM",
-    time: "20Min",
-    pace: "6'30\"/KM",
-  };
+  // API에서 받은 recommendation 데이터 또는 기본값
+  const firstRecommendation = homeData?.recommendation
+    ? {
+        title: `${homeData.recommendation.type}`,
+        description: homeData.recommendation.reason || "",
+        distance: `${homeData.recommendation.distance_km}KM`,
+        time: "20Min", // API 응답에 없으므로 기본값 유지
+        pace: `${homeData.recommendation.target_pace}/KM`,
+      }
+    : {
+        title: "오늘은 회복 러닝!",
+        description:
+          "어제 10km 러닝으로 피로도가 누적되어 있습니다. 오늘은 회복 러닝을 추천드려요.",
+        distance: "3KM",
+        time: "20Min",
+        pace: "6'30\"/KM",
+      };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -100,6 +218,24 @@ export default function Home() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Loading State */}
+          {isLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={palette.green} />
+              <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
+            </View>
+          )}
+
+          {/* Error State */}
+          {error && !isLoading && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Content - Show only when not loading and no error */}
+          {!isLoading && !error && (
+            <>
           {/* First Recommendation Card */}
           <View style={styles.recommendationCard}>
             <View style={styles.flameIconContainer}>
@@ -157,7 +293,7 @@ export default function Home() {
               <Text style={styles.levelCardTitle}>My Level</Text>
               <View style={styles.levelMedalContainer}>
                 <Image
-                  source={silverMedal}
+                  source={getTierBadge(homeData?.tier)}
                   style={styles.levelMedal}
                   resizeMode="contain"
                 />
@@ -228,6 +364,8 @@ export default function Home() {
               </View>
             </View>
           </View>
+            </>
+          )}
         </ScrollView>
       </View>
       <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
@@ -501,5 +639,27 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: palette.black,
     marginBottom: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 40,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: palette.graySubtitle,
+  },
+  errorContainer: {
+    padding: 20,
+    backgroundColor: palette.gray,
+    borderRadius: 20,
+    marginVertical: 20,
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#FF6B6B",
+    textAlign: "center",
   },
 });

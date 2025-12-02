@@ -38,18 +38,10 @@ const getTierBadge = (tierRank) => {
   if (!tierRank) return null;
   
   const tierMap = {
-    "BRONZE I": bronzeMedal1,
-    "BRONZE II": bronzeMedal2,
-    "BRONZE III": bronzeMedal3,
-    "SILVER I": silverMedal,
-    "SILVER II": silverMedal,
-    "SILVER III": silverMedal,
-    "GOLD I": goldMedal1,
-    "GOLD II": goldMedal2,
-    "GOLD III": goldMedal3,
-    "PLATINUM I": platinumMedal1,
-    "PLATINUM II": platinumMedal2,
-    "PLATINUM III": platinumMedal3,
+    "BRONZE": bronzeMedal3,
+    "SILVER": silverMedal,
+    "GOLD": goldMedal3,
+    "PLATINUM": platinumMedal3,
     "DIAMOND": diamondMedal,
     "MASTER": masterMedal,
     "CHALLENGER": challengerMedal,
@@ -106,7 +98,7 @@ export default function Mypage() {
       setError(null);
 
       //const uid = await AsyncStorage.getItem("uid");
-      const uid = 12;
+      const uid = 22;
       
       if (!uid) {
         Alert.alert("오류", "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");

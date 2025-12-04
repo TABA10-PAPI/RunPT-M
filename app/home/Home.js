@@ -13,6 +13,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import BottomNavigationBar from "@components/BottomNavigationBar";
+import { getProfileImage } from "@utils/profileImage";
 import { Ionicons } from "@expo/vector-icons";
 import readRunningData from "@services/HealthConnectService";
 import apiClient from "@config/api";
@@ -87,7 +88,7 @@ export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
   //const { uid, isLoading: uidLoading } = useUid();
-  const uid = 12;
+  const uid = 22;
   const uidLoading = false;
 
   // API 응답 데이터 상태
@@ -201,7 +202,11 @@ export default function Home() {
         <View style={styles.profileHeader}>
           <View style={styles.profileInfo}>
             <View style={styles.profileImageContainer}>
-              <View style={styles.profileImagePlaceholder} />
+              <Image
+                source={getProfileImage(uid)}
+                style={styles.profileImage}
+                resizeMode="cover"
+              />
             </View>
             <View style={styles.profileTextContainer}>
               <Text style={styles.profileName}>{userInfo.name}</Text>
@@ -400,11 +405,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     overflow: "hidden",
   },
-  profileImagePlaceholder: {
+  profileImage: {
     width: "100%",
     height: "100%",
-    backgroundColor: palette.gray,
-    borderRadius: 25,
   },
   profileTextContainer: {
     flex: 1,

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import { getTierImage } from "@utils/tierImages";
+import { getProfileImage } from "@utils/profileImage";
 
 /**
  * 댓글 아이템 컴포넌트
@@ -16,7 +17,13 @@ export default function CommentItem({ comment, onDelete, canDelete = false }) {
       <View style={styles.divider} />
       
       <View style={styles.commentItem}>
-        <View style={styles.commentProfileCircle} />
+        <View style={styles.commentProfileCircle}>
+          <Image
+            source={getProfileImage(comment.uid || comment.name)}
+            style={styles.commentProfileImage}
+            resizeMode="cover"
+          />
+        </View>
         <View style={styles.commentContent}>
           <View style={styles.commentHeader}>
             <Text style={styles.commentName}>{comment.name}</Text>
@@ -70,6 +77,10 @@ const styles = StyleSheet.create({
     backgroundColor: palette.grayMedium,
     overflow: "hidden",
     marginRight: 12,
+  },
+  commentProfileImage: {
+    width: "100%",
+    height: "100%",
   },
   commentContent: {
     flex: 1,

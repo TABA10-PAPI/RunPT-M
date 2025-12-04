@@ -6,6 +6,7 @@ import { palette, typography } from "@styles/globalStyles";
 import { useUid } from "@hooks/UseUid";
 import apiClient from "@config/api";
 import { getTierImage } from "@utils/tierImages";
+import { getProfileImage } from "@utils/profileImage";
 
 /**
  * 게시물 카드 컴포넌트
@@ -112,8 +113,13 @@ export default function PostCard({
       ]}
     >
       <View style={styles.postHeader}>
-       
-
+        <View style={styles.profileCircle}>
+          <Image
+            source={getProfileImage(post.apiData?.uid || post.uid || post.name)}
+            style={styles.profileImage}
+            resizeMode="cover"
+          />
+        </View>
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.nickname}>{post.name}</Text>

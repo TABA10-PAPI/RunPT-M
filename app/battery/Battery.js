@@ -175,8 +175,8 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     paddingHorizontal: "5%",
-    paddingTop: 16,
-    paddingBottom: 90,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   scroll: {
     flex: 1,

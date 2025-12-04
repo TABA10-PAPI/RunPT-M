@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import ScreenHeader from "@components/ScreenHeader";
 import apiClient from "@config/api";
+import { palette } from "@styles/globalStyles";
 
 export default function Run() {
   const navigation = useNavigation();
@@ -215,7 +216,7 @@ export default function Run() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#090909",
+    backgroundColor: palette.black,
   },
   wrapper: {
     flex: 1,
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   recommendationCard: {
-    backgroundColor: "#1B1B1B",
+    backgroundColor: palette.gray,
     borderRadius: 20,
     padding: 20,
     paddingTop: 12,
@@ -240,7 +241,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   recommendationCardAccent: {
-    backgroundColor: "#DAFD2E",
+    backgroundColor: palette.green,
   },
   badgeContainer: {
     position: "absolute",
@@ -255,25 +256,25 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: "#000000",
+    fontWeight: "600",
+    color: palette.black,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontWeight: "600",
+    color: palette.white,
     marginTop: 4,
   },
   cardTitleDark: {
-    color: "#000000",
+    color: palette.black,
   },
   cardDescription: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#CFCFCF",
+    color: palette.graySubtitle,
   },
   cardDescriptionDark: {
-    color: "#1A1A1A",
+    color: palette.black,
   },
   metricsContainer: {
     flexDirection: "row",
@@ -291,18 +292,18 @@ const styles = StyleSheet.create({
   metricLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#A0A0A0",
+    color: palette.white,
   },
   metricLabelDark: {
-    color: "#1A1A1A",
+    color: palette.black,
   },
   metricValue: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: palette.white,
   },
   metricValueDark: {
-    color: "#000000",
+    color: palette.black,
   },
   loadingContainer: {
     flex: 1,
@@ -312,7 +313,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loadingText: {
-    color: "#FFFFFF",
+    color: palette.white,
     fontSize: 16,
   },
   errorContainer: {
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   errorText: {
-    color: "#FF6B6B",
+    color: palette.red,
     fontSize: 16,
     textAlign: "center",
   },
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyText: {
-    color: "#A0A0A0",
+    color: palette.graySubtitle,
     fontSize: 16,
     textAlign: "center",
   },

@@ -88,8 +88,8 @@ export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
   //const { uid, isLoading: uidLoading } = useUid();
-  const uid = 22;
-  const uidLoading = false;
+  // const uid = 12;
+  // const uidLoading = false;
 
   // API 응답 데이터 상태
   const [homeData, setHomeData] = useState(null);
@@ -108,8 +108,8 @@ export default function Home() {
         setError(null);
         
         // 오늘 날짜를 YYYY-MM-DD 형식으로 변환
-        //const today = new Date().toISOString().split('T')[0];
-        const today = '2025-11-21';
+        const today = new Date().toISOString().split('T')[0];
+        // const today = '2025-11-21';
 
         // API 요청
         const response = await apiClient.post('/home', {

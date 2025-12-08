@@ -224,7 +224,7 @@ export default function Community() {
               onChangeText={handleSearch}
             />
             <TouchableOpacity style={styles.searchIconContainer}>
-              <Icon name="search" size={15} color={palette.grayLight} />
+              <Icon name="search" size={18} color={palette.grayLight} />
             </TouchableOpacity>
           </View>
         </View>
@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
   },
 
   newPostButton: {
-    width: 33,
-    height: 33,
+    width: 40,
+    height: 40,
     backgroundColor: palette.black,
     borderRadius: 20,
     justifyContent: "center",

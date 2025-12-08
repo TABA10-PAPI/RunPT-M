@@ -170,15 +170,15 @@ export default function Mypage() {
   const { uid, isLoading: uidLoading } = useUid();
 
   useEffect(() => {
-    fetchMypageData();
-  }, []);
+    if (uid && !uidLoading) {
+      fetchMypageData();
+    }
+  }, [uid, uidLoading]);
 
   const fetchMypageData = async () => {
     try {
       setIsLoading(true);
       setError(null);
-
-      //const uid = 22;
       
       if (!uid) {
         Alert.alert("오류", "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");

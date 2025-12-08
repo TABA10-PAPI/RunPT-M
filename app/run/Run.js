@@ -12,24 +12,22 @@ export default function Run() {
   const navigation = useNavigation();
   const route = useRoute();
   const { uid, isLoading: uidLoading } = useUid();
-  const user_id = uid;
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchRecommendations();
-  }, []);
+    if (uid && !uidLoading) {
+      fetchRecommendations();
+    }
+  }, [uid, uidLoading]);
 
   const fetchRecommendations = async () => {
     try {
       setIsLoading(true);
       setError(null);
-
-      //const user_id = await AsyncStorage.getItem("uid");
-      //const user_id = 22;
       
-      if (!user_id) {
+      if (!uid) {
         Alert.alert("오류", "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
         setIsLoading(false);
         return;
@@ -44,7 +42,7 @@ export default function Run() {
       //const date = "2025-12-04";
 
       const data = {
-        user_id: parseInt(user_id, 10),
+        user_id: parseInt(uid, 10),
         date: date,
       };
 

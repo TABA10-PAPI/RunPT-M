@@ -64,8 +64,6 @@ export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
   const { uid, isLoading: uidLoading } = useUid();
-  // const uid = 12;
-  // const uidLoading = false;
 
   // API 응답 데이터 상태
   const [homeData, setHomeData] = useState(null);

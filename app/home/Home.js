@@ -141,6 +141,14 @@ export default function Home() {
     return Math.round(clamped);
   }, [batteryFromServer]);
 
+  // 배터리 레벨에 따른 색상 결정
+  const batteryColor = useMemo(() => {
+    if (batteryLevel == null) return palette.green;
+    if (batteryLevel <= 15) return palette.red;
+    if (batteryLevel <= 30) return palette.yellow;
+    return palette.green;
+  }, [batteryLevel]);
+
   // tier에서 가장 높은 등급 찾기
   const highestTier = useMemo(() => {
     if (!homeData?.tier) return null;
@@ -253,7 +261,7 @@ export default function Home() {
           {/* Loading State */}
           {isLoading && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={palette.green} />
+              <ActivityIndicator size="large" color={batteryColor} />
               <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
             </View>
           )}
@@ -317,7 +325,7 @@ export default function Home() {
                       <View
                         style={[
                           styles.batteryFill,
-                          { width: `${batteryLevel}%` },
+                          { width: `${batteryLevel}%`, backgroundColor: batteryColor },
                         ]}
                       />
                       <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
@@ -603,7 +611,6 @@ const styles = StyleSheet.create({
   batteryFill: {
     height: "100%",
     borderRadius: 10,
-    backgroundColor: palette.green,
   },
   batteryLabel: {
     position: "absolute",

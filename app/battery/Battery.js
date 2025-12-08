@@ -62,6 +62,14 @@ export default function Battery() {
     return Math.round(clamped);
   }, [batteryData?.battery_score]);
 
+  // 배터리 레벨에 따른 색상 결정
+  const batteryColor = useMemo(() => {
+    if (batteryLevel == null) return palette.green;
+    if (batteryLevel <= 15) return palette.red;
+    if (batteryLevel <= 30) return palette.yellow;
+    return palette.green;
+  }, [batteryLevel]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.wrapper}>
@@ -73,7 +81,7 @@ export default function Battery() {
         >
           {isLoading || uidLoading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={palette.green} />
+              <ActivityIndicator size="large" color={batteryColor} />
             </View>
           ) : error ? (
             <View style={styles.errorContainer}>
@@ -88,7 +96,7 @@ export default function Battery() {
                       <View
                         style={[
                           styles.batteryFill,
-                          { width: `${batteryLevel}%` },
+                          { width: `${batteryLevel}%`, backgroundColor: batteryColor },
                         ]}
                       >
                         <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
@@ -101,7 +109,7 @@ export default function Battery() {
 
               {(batteryData?.feedback || batteryData?.reason) && (
                 <View style={styles.commentCard}>
-                  <Text style={styles.commentTitle}>AI Comment</Text>
+                  <Text style={[styles.commentTitle, { color: batteryColor }]}>AI Comment</Text>
                   <Text style={styles.commentText}>
                     {batteryData?.feedback && `${batteryData.feedback}\n`}
                     {batteryData?.reason}
@@ -163,7 +171,6 @@ const styles = StyleSheet.create({
   batteryFill: {
     height: "100%",
     borderRadius: 18,
-    backgroundColor: palette.green,
   },
   batteryLabel: {
     position: "absolute",
@@ -190,7 +197,6 @@ const styles = StyleSheet.create({
   commentTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: palette.green,
   },
   commentText: {
     fontSize: 14,

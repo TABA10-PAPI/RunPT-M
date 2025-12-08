@@ -26,7 +26,7 @@ export default function Run() {
       setError(null);
 
       // const user_id = await AsyncStorage.getItem("uid");
-      const user_id = 12;
+      const user_id = 22;
       
       if (!user_id) {
         Alert.alert("오류", "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
@@ -40,7 +40,7 @@ export default function Run() {
       const month = String(today.getMonth() + 1).padStart(2, "0");
       const day = String(today.getDate()).padStart(2, "0");
       //const date = `${year}-${month}-${day}`;
-      const date = "2025-11-21";
+      const date = "2025-12-04";
 
       const data = {
         user_id: parseInt(user_id, 10),

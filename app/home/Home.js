@@ -21,26 +21,10 @@ import { useUid } from "@hooks/UseUid";
 
 // Rank badges
 const rankBadges = {
-  bronze: {
-    I: require("@assets/rank/Bronze I.png"),
-    II: require("@assets/rank/Bronze II.png"),
-    III: require("@assets/rank/Bronze III.png"),
-  },
-  silver: {
-    I: require("@assets/rank/Silver I.png"),
-    II: require("@assets/rank/Silver II.png"),
-    III: require("@assets/rank/Silver III.png"),
-  },
-  gold: {
-    I: require("@assets/rank/Gold I.png"),
-    II: require("@assets/rank/Gold II.png"),
-    III: require("@assets/rank/Gold III.png"),
-  },
-  platinum: {
-    I: require("@assets/rank/Platinum I.png"),
-    II: require("@assets/rank/Platinum II.png"),
-    III: require("@assets/rank/Platinum III.png"),
-  },
+  bronze: require("@assets/rank/Bronze III.png"),
+  silver: require("@assets/rank/Silver III.png"),
+  gold: require("@assets/rank/Gold III.png"),
+  platinum: require("@assets/rank/Platinum III.png"),
   diamond: require("@assets/rank/Diamond.png"),
   master: require("@assets/rank/Master.png"),
   challenger: require("@assets/rank/Challenger.png"),
@@ -48,7 +32,7 @@ const rankBadges = {
 
 // tier 문자열을 파싱하여 적절한 뱃지 이미지를 반환
 const getTierBadge = (tier) => {
-  if (!tier) return rankBadges.silver.I; // 기본값
+  if (!tier) return rankBadges.silver; // 기본값
   
   const tierLower = tier.toLowerCase();
   
@@ -60,28 +44,20 @@ const getTierBadge = (tier) => {
   // "gold", "silver", "bronze", "platinum" 같은 경우
   // 기본적으로 I 등급으로 설정 (실제로는 API 응답에 따라 다를 수 있음)
   if (tierLower.includes("bronze")) {
-    if (tierLower.includes("iii")) return rankBadges.bronze.III;
-    if (tierLower.includes("ii")) return rankBadges.bronze.II;
-    return rankBadges.bronze.I;
+    return rankBadges.bronze;
   }
   if (tierLower.includes("silver")) {
-    if (tierLower.includes("iii")) return rankBadges.silver.III;
-    if (tierLower.includes("ii")) return rankBadges.silver.II;
-    return rankBadges.silver.I;
+    return rankBadges.silver;
   }
   if (tierLower.includes("gold")) {
-    if (tierLower.includes("iii")) return rankBadges.gold.III;
-    if (tierLower.includes("ii")) return rankBadges.gold.II;
-    return rankBadges.gold.I;
+    return rankBadges.gold;
   }
   if (tierLower.includes("platinum")) {
-    if (tierLower.includes("iii")) return rankBadges.platinum.III;
-    if (tierLower.includes("ii")) return rankBadges.platinum.II;
-    return rankBadges.platinum.I;
+    return rankBadges.platinum;
   }
   
   // 기본값
-  return rankBadges.silver.I;
+  return rankBadges.silver;
 };
 
 export default function Home() {
@@ -151,49 +127,101 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
-  // API 데이터 또는 기본값 사용
+  // API 데이터 사용
   const userInfo = {
-    name: "홍길동",
-    nickname: homeData?.nickname || "달리는 뉴비",
+    nickname: homeData?.nickname,
   };
 
-  // API에서 받은 battery 값 또는 기본값
-  const batteryFromServer = homeData?.battery ?? 70;
+  // API에서 받은 battery 값
+  const batteryFromServer = homeData?.battery?.battery;
 
   const batteryLevel = useMemo(() => {
+    if (batteryFromServer == null) return null;
     const clamped = Math.max(0, Math.min(100, batteryFromServer));
     return Math.round(clamped);
   }, [batteryFromServer]);
 
-  const weeklyData = [
-    { day: "Sun", date: 23, completed: true, distance: "10.0KM" },
-    { day: "Mon", date: 24, completed: true, distance: "5.6KM" },
-    { day: "Tue", date: 25, completed: true, distance: "5.4KM" },
-    { day: "Wen", date: 26, completed: false, distance: null },
-    { day: "Thu", date: 27, completed: true, distance: "5.0KM" },
-    { day: "Fri", date: 28, completed: false, distance: null },
-    { day: "Sat", date: 29, completed: false, distance: null },
-  ];
+  // tier에서 가장 높은 등급 찾기
+  const highestTier = useMemo(() => {
+    if (!homeData?.tier) return null;
+    
+    const tierOrder = {
+      'BRONZE': 1,
+      'SILVER': 2,
+      'GOLD': 3,
+      'PLATINUM': 4,
+      'DIAMOND': 5,
+      'MASTER': 6,
+      'CHALLENGER': 7,
+    };
+    
+    const tiers = [
+      homeData.tier.km3,
+      homeData.tier.km5,
+      homeData.tier.km10,
+      homeData.tier.half,
+      homeData.tier.full,
+    ].filter(Boolean);
+    
+    if (tiers.length === 0) return null;
+    
+    // 가장 높은 등급 찾기
+    const highest = tiers.reduce((max, tier) => {
+      const maxOrder = tierOrder[max?.toUpperCase()] || 0;
+      const currentOrder = tierOrder[tier?.toUpperCase()] || 0;
+      return currentOrder > maxOrder ? tier : max;
+    });
+    
+    return highest;
+  }, [homeData?.tier]);
 
-  const completedDays = weeklyData.filter((day) => day.completed).length;
+  // 페이스 문자열을 분으로 변환 (예: "5:32" -> 5.533분)
+  const parsePaceToMinutes = (paceString) => {
+    if (!paceString) return null;
+    const parts = paceString.split(':');
+    if (parts.length !== 2) return null;
+    const minutes = parseInt(parts[0], 10);
+    const seconds = parseInt(parts[1], 10);
+    return minutes + seconds / 60;
+  };
 
-  // API에서 받은 recommendation 데이터 또는 기본값
-  const firstRecommendation = homeData?.recommendation
-    ? {
-        title: `${homeData.recommendation.type}`,
-        description: homeData.recommendation.reason || "",
-        distance: `${homeData.recommendation.distance_km}KM`,
-        time: "20Min", // API 응답에 없으므로 기본값 유지
-        pace: `${homeData.recommendation.target_pace}/KM`,
+  // API에서 받은 recommendation 데이터
+  const firstRecommendation = useMemo(() => {
+    if (homeData?.battery?.recommendationsJson) {
+      try {
+        const recommendations = JSON.parse(homeData.battery.recommendationsJson);
+        if (recommendations && recommendations.length > 0) {
+          const first = recommendations[0];
+          const distanceKm = first.distance_km;
+          const paceMinutes = parsePaceToMinutes(first.target_pace);
+          
+          // 시간 계산: 거리(km) * 페이스(분/km) = 시간(분)
+          let timeString = "";
+          if (distanceKm && paceMinutes) {
+            const totalMinutes = distanceKm * paceMinutes;
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = Math.round(totalMinutes % 60);
+            if (hours > 0) {
+              timeString = `${hours}H ${minutes}M`;
+            } else {
+              timeString = `${minutes}M`;
+            }
+          }
+          
+          return {
+            title: `${first.type}`,
+            description: first.reason || "",
+            distance: `${first.distance_km}KM`,
+            pace: `${first.target_pace}/KM`,
+            time: timeString,
+          };
+        }
+      } catch (e) {
+        console.error('Failed to parse recommendationsJson:', e);
       }
-    : {
-        title: "오늘은 회복 러닝!",
-        description:
-          "어제 10km 러닝으로 피로도가 누적되어 있습니다. 오늘은 회복 러닝을 추천드려요.",
-        distance: "3KM",
-        time: "20Min",
-        pace: "6'30\"/KM",
-      };
+    }
+    return null;
+  }, [homeData?.battery?.recommendationsJson]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -209,7 +237,6 @@ export default function Home() {
               />
             </View>
             <View style={styles.profileTextContainer}>
-              <Text style={styles.profileName}>{userInfo.name}</Text>
               <Text style={styles.profileNickname}>{userInfo.nickname}</Text>
             </View>
           </View>
@@ -242,130 +269,194 @@ export default function Home() {
           {!isLoading && !error && (
             <>
           {/* First Recommendation Card */}
-          <View style={styles.recommendationCard}>
-            <View style={styles.flameIconContainer}>
-              <Ionicons name="flame" size={24} color={palette.black} />
+          {firstRecommendation && (
+            <View style={styles.recommendationCard}>
+              <View style={styles.flameIconContainer}>
+                <Ionicons name="flame" size={24} color={palette.black} />
+              </View>
+              <Text style={styles.recommendationTitle}>
+                {firstRecommendation.title}
+              </Text>
+              <Text style={styles.recommendationDescription}>
+                {firstRecommendation.description}
+              </Text>
+              <View style={styles.recommendationMetrics}>
+                <View style={styles.recommendationMetricItem}>
+                  <Text style={styles.recommendationMetricLabel}>거리</Text>
+                  <Text style={styles.recommendationMetricValue}>
+                    {firstRecommendation.distance}
+                  </Text>
+                </View>
+                {firstRecommendation.time && (
+                  <View style={styles.recommendationMetricItem}>
+                    <Text style={styles.recommendationMetricLabel}>시간</Text>
+                    <Text style={styles.recommendationMetricValue}>
+                      {firstRecommendation.time}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.recommendationMetricItem}>
+                  <Text style={styles.recommendationMetricLabel}>페이스</Text>
+                  <Text style={styles.recommendationMetricValue}>
+                    {firstRecommendation.pace}
+                  </Text>
+                </View>
+              </View>
             </View>
-            <Text style={styles.recommendationTitle}>
-              {firstRecommendation.title}
-            </Text>
-            <Text style={styles.recommendationDescription}>
-              {firstRecommendation.description}
-            </Text>
-            <View style={styles.recommendationMetrics}>
-              <View style={styles.recommendationMetricItem}>
-                <Text style={styles.recommendationMetricLabel}>거리</Text>
-                <Text style={styles.recommendationMetricValue}>
-                  {firstRecommendation.distance}
-                </Text>
-              </View>
-              <View style={styles.recommendationMetricItem}>
-                <Text style={styles.recommendationMetricLabel}>시간</Text>
-                <Text style={styles.recommendationMetricValue}>
-                  {firstRecommendation.time}
-                </Text>
-              </View>
-              <View style={styles.recommendationMetricItem}>
-                <Text style={styles.recommendationMetricLabel}>페이스</Text>
-                <Text style={styles.recommendationMetricValue}>
-                  {firstRecommendation.pace}
-                </Text>
-              </View>
-            </View>
-          </View>
+          )}
 
           {/* Running Battery and My Level Row */}
-          <View style={styles.twoColumnContainer}>
-            {/* Running Battery Card */}
-            <View style={styles.batteryCard}>
-              <Text style={styles.batteryCardTitle}>Running Battery</Text>
-              <View style={styles.batteryContainer}>
-                <View style={styles.batteryOutline}>
-                  <View
-                    style={[
-                      styles.batteryFill,
-                      { width: `${batteryLevel}%` },
-                    ]}
-                  />
-                  <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
+          {(batteryLevel != null || highestTier) && (
+            <View style={styles.twoColumnContainer}>
+              {/* Running Battery Card */}
+              {batteryLevel != null && (
+                <View style={styles.batteryCard}>
+                  <Text style={styles.batteryCardTitle}>Running Battery</Text>
+                  <View style={styles.batteryContainer}>
+                    <View style={styles.batteryOutline}>
+                      <View
+                        style={[
+                          styles.batteryFill,
+                          { width: `${batteryLevel}%` },
+                        ]}
+                      />
+                      <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
+                    </View>
+                    <View style={styles.batteryCap} />
+                  </View>
                 </View>
-                <View style={styles.batteryCap} />
-              </View>
-            </View>
+              )}
 
-            {/* My Level Card */}
-            <View style={styles.levelCard}>
-              <Text style={styles.levelCardTitle}>My Level</Text>
-              <View style={styles.levelMedalContainer}>
-                <Image
-                  source={getTierBadge(homeData?.tier)}
-                  style={styles.levelMedal}
-                  resizeMode="contain"
-                />
-              </View>
+              {/* My Level Card */}
+              {highestTier && (
+                <View style={styles.levelCard}>
+                  <Text style={styles.levelCardTitle}>My Level</Text>
+                  <View style={styles.levelMedalContainer}>
+                    <Image
+                      source={getTierBadge(highestTier)}
+                      style={styles.levelMedal}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </View>
+              )}
             </View>
-          </View>
+          )}
 
           {/* Condition Comment Card */}
-          <View style={styles.commentCard}>
-            <Text style={styles.commentTitle}>Condition Comment</Text>
-            <Text style={styles.commentText}>
-              어제 10km 러닝으로 피로도가 누적되어 있습니다. 더운 날씨에 높은
-              칼로리를 소모하였으므로 오늘 하루는 수분 섭취에 신경써주세요..
-            </Text>
-          </View>
+          {(homeData?.battery?.feedback || homeData?.battery?.reason) && (
+            <View style={styles.commentCard}>
+              <Text style={styles.commentTitle}>Condition Comment</Text>
+              <Text style={styles.commentText}>
+                {homeData?.battery?.feedback && `${homeData.battery.feedback}\n`}
+                {homeData?.battery?.reason}
+              </Text>
+            </View>
+          )}
 
           {/* My Running History Section */}
           <View style={styles.historyCard}>
-            <Text style={styles.historyTitle}>My Running History</Text>
+            <Text style={styles.historyTitle}>This Week Running</Text>
 
             {/* This Week Section */}
             <View style={styles.weekSection}>
-              <View style={styles.weekHeader}>
+              {/* <View style={styles.weekHeader}>
                 <Text style={styles.weekTitle}>This Week</Text>
-                <Text style={styles.weekProgress}>
-                  {completedDays}/7 Days
-                </Text>
-              </View>
+              </View> */}
 
               <View style={styles.weekDaysContainer}>
-                {weeklyData.map((day, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.dayItem,
-                      day.completed && styles.dayItemCompleted,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayDate,
-                        day.completed && styles.dayDateCompleted,
-                      ]}
-                    >
-                      {day.date}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.dayName,
-                        day.completed && styles.dayNameCompleted,
-                      ]}
-                    >
-                      {day.day}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.checkmark,
-                        day.completed && styles.checkmarkCompleted,
-                      ]}
-                    >
-                      ✓
-                    </Text>
-                    {day.completed && day.distance && (
-                      <Text style={styles.dayDistance}>{day.distance}</Text>
-                    )}
-                  </View>
-                ))}
+                {(() => {
+                  // 주간 데이터 계산 (Mypage.js 로직 참고)
+                  const getWeekStart = (date) => {
+                    const d = new Date(date);
+                    const day = d.getDay();
+                    const diff = d.getDate() - day;
+                    return new Date(d.setDate(diff));
+                  };
+
+                  const formatDateString = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, "0");
+                    const day = String(date.getDate()).padStart(2, "0");
+                    return `${year}-${month}-${day}`;
+                  };
+
+                  const parseDateString = (dateString) => {
+                    if (dateString.includes("T")) {
+                      return new Date(dateString);
+                    }
+                    return new Date(dateString + "T00:00:00");
+                  };
+
+                  const getWeekDays = (weekStart) => {
+                    const days = [];
+                    for (let i = 0; i < 7; i++) {
+                      const date = new Date(weekStart);
+                      date.setDate(date.getDate() + i);
+                      days.push(date);
+                    }
+                    return days;
+                  };
+
+                  const currentWeekStart = getWeekStart(new Date());
+                  const weekDays = getWeekDays(currentWeekStart);
+                  const runningSessions = homeData?.runningSession || [];
+
+                  return weekDays.map((day, index) => {
+                    const dateStr = formatDateString(day);
+                    const dayRecords = runningSessions.filter((record) => {
+                      const recordDate = formatDateString(parseDateString(record.date));
+                      return recordDate === dateStr;
+                    });
+                    
+                    const totalDistance = dayRecords.reduce((sum, r) => sum + (r.distance / 1000), 0);
+                    const hasRecord = dayRecords.length > 0;
+                    
+                    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                    const dayName = days[day.getDay()];
+                    const dayNumber = day.getDate();
+                    
+                    return (
+                      <View
+                        key={index}
+                        style={[
+                          styles.dayItem,
+                          hasRecord && styles.dayItemCompleted,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.dayDate,
+                            hasRecord && styles.dayDateCompleted,
+                          ]}
+                        >
+                          {dayNumber}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.dayName,
+                            hasRecord && styles.dayNameCompleted,
+                          ]}
+                        >
+                          {dayName}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.checkmark,
+                            hasRecord && styles.checkmarkCompleted,
+                          ]}
+                        >
+                          ✓
+                        </Text>
+                        {hasRecord && totalDistance > 0 && (
+                          <Text style={styles.dayDistance}>
+                            {totalDistance.toFixed(1)}KM
+                          </Text>
+                        )}
+                      </View>
+                    );
+                  });
+                })()}
               </View>
             </View>
           </View>
@@ -467,13 +558,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   recommendationMetricLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: palette.black,
   },
   recommendationMetricValue: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "650",
     color: palette.black,
   },
   twoColumnContainer: {
@@ -496,7 +587,7 @@ const styles = StyleSheet.create({
   batteryContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 0,
     width: "100%",
   },
   batteryOutline: {
@@ -522,9 +613,10 @@ const styles = StyleSheet.create({
     color: palette.black,
   },
   batteryCap: {
-    width: 12,
-    height: 32,
-    borderRadius: 8,
+    width: 10,
+    height: 40,
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
     backgroundColor: palette.white,
   },
   levelCard: {
@@ -558,7 +650,7 @@ const styles = StyleSheet.create({
   },
   commentTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
     color: palette.white,
   },
   commentText: {
@@ -575,7 +667,7 @@ const styles = StyleSheet.create({
   },
   historyTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "600",
     color: palette.green,
   },
   weekSection: {
@@ -664,5 +756,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#FF6B6B",
     textAlign: "center",
+  },
+  sessionItem: {
+    padding: 12,
+    marginTop: 8,
+    backgroundColor: palette.gray,
+    borderRadius: 12,
+    gap: 4,
+  },
+  sessionDate: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: palette.white,
+  },
+  sessionInfo: {
+    fontSize: 12,
+    color: palette.graySubtitle,
   },
 });

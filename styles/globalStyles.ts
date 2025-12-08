@@ -37,8 +37,8 @@ export const globalStyles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingTop: 60,
-    paddingBottom: 50,
+    paddingTop: 30,
+    paddingBottom: 80,
     paddingHorizontal: "5%",
     backgroundColor: palette.black,
   },

@@ -207,7 +207,11 @@ export default function Mypage() {
 
   // 성별 변환 함수
   const formatGender = (gender) => {
-    return gender === "MALE" ? "남" : gender === "FEMALE" ? "여" : gender;
+    if (!gender) return gender;
+    const genderUpper = gender.toUpperCase();
+    if (genderUpper === "M" || genderUpper === "MALE") return "남";
+    if (genderUpper === "F" || genderUpper === "FEMALE") return "여";
+    return gender;
   };
 
   if (isLoading) {
@@ -281,7 +285,7 @@ export default function Mypage() {
     };
   });
 
-  // 해당 주의 모든 상세 기록
+  // 해당 주의 모든 상세 기록 (중복 제거)
   const weekRecords = recentRecords.filter((record) => {
     const recordDate = parseDateString(record.date);
     // 날짜만 비교 (시간 제외)
@@ -289,7 +293,12 @@ export default function Mypage() {
     const weekStartOnly = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate());
     const weekEndOnly = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate());
     return recordDateOnly >= weekStartOnly && recordDateOnly <= weekEndOnly;
-  }).sort((a, b) => {
+  })
+  // 중복 제거: 같은 id를 가진 기록은 하나만 남기기
+  .filter((record, index, self) => 
+    index === self.findIndex((r) => r.id === record.id)
+  )
+  .sort((a, b) => {
     return parseDateString(b.date) - parseDateString(a.date);
   });
 

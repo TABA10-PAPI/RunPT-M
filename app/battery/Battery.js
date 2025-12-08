@@ -12,10 +12,10 @@ export default function Battery() {
   const navigation = useNavigation();
   const route = useRoute();
   //const { uid, isLoading: uidLoading } = useUid();
-  const uid = 12;
+  const uid = 22;
   const uidLoading = false;
 
-  const [batteryScore, setBatteryScore] = useState(null);
+  const [batteryData, setBatteryData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -32,7 +32,7 @@ export default function Battery() {
 
         // 날짜 포맷팅 (YYYY-MM-DD)
         //const date = new Date().toISOString().split('T')[0];
-        const date = "2025-11-21";
+        const date = "2025-12-04";
         
         // API 요청
         const response = await apiClient.post("/running/battery", {
@@ -41,15 +41,13 @@ export default function Battery() {
         });
 
         if (response.data.code === "SU") {
-          setBatteryScore(response.data.battery_score);
+          setBatteryData(response.data);
         } else {
           throw new Error(response.data.message || "배터리 데이터를 가져오는데 실패했습니다.");
         }
       } catch (err) {
         console.error("[Battery] API 호출 실패:", err);
         setError(err?.message || "배터리 데이터를 불러오는데 실패했습니다.");
-        // 에러 발생 시 기본값 설정
-        setBatteryScore(70);
       } finally {
         setIsLoading(false);
       }
@@ -58,25 +56,11 @@ export default function Battery() {
     fetchBatteryData();
   }, [uid, uidLoading]);
 
-  const batteryFromServer = batteryScore !== null ? batteryScore : 70;
-
   const batteryLevel = useMemo(() => {
-    const clamped = Math.max(0, Math.min(100, batteryFromServer));
+    if (batteryData?.battery_score == null) return null;
+    const clamped = Math.max(0, Math.min(100, batteryData.battery_score));
     return Math.round(clamped);
-  }, [batteryFromServer]);
-
-  const statsCards = [
-    {
-      key: "calories",
-      label: "Calories",
-      value: "630",
-      unit: "kcal",
-      span: 2,
-      accent: true,
-    },
-    { key: "heart", label: "Heart rate", value: "86", unit: "bpm" },
-    { key: "sleep", label: "Sleep", value: "6.5", unit: "hour" },
-  ];
+  }, [batteryData?.battery_score]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -91,73 +75,39 @@ export default function Battery() {
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={palette.green} />
             </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
           ) : (
             <>
-              <View style={styles.batteryCard}>
-            <View style={styles.batteryContainer}>
-              <View style={styles.batteryOutline}>
-                <View
-                  style={[
-                    styles.batteryFill,
-                    { width: `${batteryLevel}%` },
-                  ]}
-                >
-                  <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
+              {batteryLevel != null && (
+                <View style={styles.batteryCard}>
+                  <View style={styles.batteryContainer}>
+                    <View style={styles.batteryOutline}>
+                      <View
+                        style={[
+                          styles.batteryFill,
+                          { width: `${batteryLevel}%` },
+                        ]}
+                      >
+                        <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
+                      </View>
+                    </View>
+                    <View style={styles.batteryCap} />
+                  </View>
                 </View>
-              </View>
-              <View style={styles.batteryCap} />
-            </View>
-          </View>
+              )}
 
-          <View style={styles.commentCard}>
-            <Text style={styles.commentTitle}>AI Comment</Text>
-            <Text style={styles.commentText}>
-              어제 10km 러닝으로 피로도가 누적되어 있습니다. 더운 날씨에 높은
-              칼로리를 소모했으므로 오늘 하루는 수분 섭취에 신경써주세요. 1.5리터
-              이상 마시는 것을 권장합니다. 수면시간이 평소보다 조금 부족하여 오늘
-              하루의 시작 배터리가 낮습니다. 컨디션 관리에 유의해주세요.
-            </Text>
-          </View>
-
-          <View style={styles.statsGrid}>
-            {statsCards.map(({ key, label, value, unit, span, accent }) => (
-              <View
-                key={key}
-                style={[
-                  styles.statCard,
-                  span === 2 && styles.statCardWide,
-                  accent && styles.statCardAccent,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statLabel,
-                    accent && styles.statLabelDark,
-                  ]}
-                >
-                  {label}
-                </Text>
-                <View style={styles.statValueRow}>
-                  <Text
-                    style={[
-                      styles.statValue,
-                      accent && styles.statValueDark,
-                    ]}
-                  >
-                    {value}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.statUnit,
-                      accent && styles.statUnitDark,
-                    ]}
-                  >
-                    {unit}
+              {(batteryData?.feedback || batteryData?.reason) && (
+                <View style={styles.commentCard}>
+                  <Text style={styles.commentTitle}>AI Comment</Text>
+                  <Text style={styles.commentText}>
+                    {batteryData?.feedback && `${batteryData.feedback}\n`}
+                    {batteryData?.reason}
                   </Text>
                 </View>
-              </View>
-            ))}
-          </View>
+              )}
             </>
           )}
         </ScrollView>
@@ -240,63 +190,28 @@ const styles = StyleSheet.create({
   commentTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: palette.white,
+    color: palette.green,
   },
   commentText: {
     fontSize: 14,
     lineHeight: 20,
     color: palette.graySubtitle,
   },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  statCard: {
-    flexBasis: "47%",
-    borderRadius: 18,
-    backgroundColor: palette.gray,
-    padding: 16,
-    gap: 6,
-  },
-  statCardWide: {
-    flexBasis: "100%",
-  },
-  statCardAccent: {
-    backgroundColor: palette.green,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: palette.graySubtitle,
-  },
-  statLabelDark: {
-    color: palette.grayDark,
-  },
-  statValueRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 6,
-  },
-  statValue: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: palette.white,
-  },
-  statValueDark: {
-    color: palette.black,
-  },
-  statUnit: {
-    fontSize: 16,
-    color: palette.graySubtitle,
-    textTransform: "lowercase",
-  },
-  statUnitDark: {
-    color: palette.grayDark,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     minHeight: 200,
+  },
+  errorContainer: {
+    padding: 20,
+    backgroundColor: palette.gray,
+    borderRadius: 20,
+    marginVertical: 20,
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#FF6B6B",
+    textAlign: "center",
   },
 });

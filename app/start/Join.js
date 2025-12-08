@@ -18,7 +18,6 @@ import {
   typography,
 } from "@styles/globalStyles";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
-import FilterChip from "@app/community/components/FilterChip";
 import { useUid } from "@hooks/UseUid";
 export default function Join() {
   const route = useRoute();
@@ -50,7 +49,7 @@ export default function Join() {
     }
 
     // gender를 "M" 또는 "F"로 변환
-    const genderValue = gender === "Male" ? "M" : gender === "Female" ? "F" : gender;
+    const genderValue = gender === "남성" ? "M" : gender === "여성" ? "F" : gender;
 
     const data = {
       uid: Number(uid),
@@ -99,7 +98,7 @@ export default function Join() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-        <Text style={[styles.title, typography.bold]}>RunPT</Text>
+        <Text style={[styles.title, typography.extrabold]}>RunPT</Text>
         <Text style={[styles.subtitle, typography.bold]}>
           신체정보를 입력하고 {"\n"}내 몸에 맞는 러닝을 시작해보세요!
         </Text>
@@ -154,27 +153,51 @@ export default function Join() {
           <View style={styles.inputGroup}>
             <Text style={[styles.label, typography.semibold]}>성별</Text>
             <View style={styles.genderContainer}>
-              <FilterChip
-                label="Male"
-                isActive={gender === "Male"}
-                onPress={() => setGender("Male")}
-              />
-              <FilterChip
-                label="Female"
-                isActive={gender === "Female"}
-                onPress={() => setGender("Female")}
-              />
+              <TouchableOpacity
+                style={[
+                  styles.genderButton,
+                  gender === "남성" && styles.genderButtonActive,
+                ]}
+                onPress={() => setGender("남성")}
+              >
+                <Text
+                  style={[
+                    styles.genderButtonText,
+                    gender === "남성" && styles.genderButtonTextActive,
+                  ]}
+                >
+                  남성
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.genderButton,
+                  gender === "여성" && styles.genderButtonActive,
+                ]}
+                onPress={() => setGender("여성")}
+              >
+                <Text
+                  style={[
+                    styles.genderButtonText,
+                    gender === "여성" && styles.genderButtonTextActive,
+                  ]}
+                >
+                  여성
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
-        <TouchableOpacity
-          style={[globalStyles.bigButton, styles.button]}
-          onPress={handleSubmit}
-        >
-          <Text style={[globalStyles.bigButtonLabel, styles.buttonLabel]}>
-            완료
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[globalStyles.bigButton, styles.button]}
+            onPress={handleSubmit}
+          >
+            <Text style={[globalStyles.bigButtonLabel]}>
+              완료
           </Text>
         </TouchableOpacity>
+        </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -186,37 +209,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    paddingTop: 40,
-    paddingBottom: 60,
+    paddingTop: 24,
+    paddingBottom: 150,
   },
   title: {
     fontSize: 25,
     fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 12,
+    color: palette.green,
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 18,
     lineHeight: 28,
     color: "#FFFFFF",
-    marginBottom: 32,
+    marginBottom: 20,
     fontWeight: "700",
   },
   form: {
-    gap: 24,
-    marginBottom: 40,
+    gap: 18,
+    marginBottom: 20,
   },
   inputGroup: {
     gap: 8,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#FFFFFF",
   },
   genderContainer: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    gap: 12,
+  },
+  genderButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: palette.gray,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  genderButtonActive: {
+    backgroundColor: palette.green,
+  },
+  genderButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: palette.white,
+  },
+  genderButtonTextActive: {
+    color: palette.black,
   },
   input: {
     paddingVertical: 14,
@@ -231,5 +274,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: palette.black,
     textAlign: "center",
+  },
+  buttonContainer: {
+    paddingBottom: 20,
   },
 });

@@ -6,14 +6,14 @@ import BottomNavigationBar from "@components/BottomNavigationBar";
 import ScreenHeader from "@components/ScreenHeader";
 import { palette } from "@styles/globalStyles";
 import apiClient from "@config/api";
-//import { useUid } from "@hooks/UseUid";
+import { useUid } from "@hooks/UseUid";
 
 export default function Battery() {
   const navigation = useNavigation();
   const route = useRoute();
-  //const { uid, isLoading: uidLoading } = useUid();
-  const uid = 22;
-  const uidLoading = false;
+  const { uid, isLoading: uidLoading } = useUid();
+  //const uid = 22;
+  //const uidLoading = false;
 
   const [batteryData, setBatteryData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,8 +31,8 @@ export default function Battery() {
         setError(null);
 
         // 날짜 포맷팅 (YYYY-MM-DD)
-        //const date = new Date().toISOString().split('T')[0];
-        const date = "2025-12-04";
+        const date = new Date().toISOString().split('T')[0];
+        //const date = "2025-12-04";
         
         // API 요청
         const response = await apiClient.post("/running/battery", {

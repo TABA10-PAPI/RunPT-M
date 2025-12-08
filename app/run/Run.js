@@ -7,11 +7,12 @@ import BottomNavigationBar from "@components/BottomNavigationBar";
 import ScreenHeader from "@components/ScreenHeader";
 import apiClient from "@config/api";
 import { palette } from "@styles/globalStyles";
-
+import { useUid } from "@hooks/UseUid";
 export default function Run() {
   const navigation = useNavigation();
   const route = useRoute();
-
+  const { uid, isLoading: uidLoading } = useUid();
+  const user_id = uid;
   const [recommendations, setRecommendations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,8 +26,8 @@ export default function Run() {
       setIsLoading(true);
       setError(null);
 
-      // const user_id = await AsyncStorage.getItem("uid");
-      const user_id = 22;
+      //const user_id = await AsyncStorage.getItem("uid");
+      //const user_id = 22;
       
       if (!user_id) {
         Alert.alert("오류", "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");
@@ -39,8 +40,8 @@ export default function Run() {
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, "0");
       const day = String(today.getDate()).padStart(2, "0");
-      //const date = `${year}-${month}-${day}`;
-      const date = "2025-12-04";
+      const date = `${year}-${month}-${day}`;
+      //const date = "2025-12-04";
 
       const data = {
         user_id: parseInt(user_id, 10),

@@ -63,7 +63,7 @@ const getTierBadge = (tier) => {
 export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
-  //const { uid, isLoading: uidLoading } = useUid();
+  const { uid, isLoading: uidLoading } = useUid();
   // const uid = 12;
   // const uidLoading = false;
 

@@ -18,7 +18,7 @@ import ScreenHeader from "@components/ScreenHeader";
 import { palette } from "@styles/globalStyles";
 import apiClient from "@config/api";
 import { getProfileImage } from "@utils/profileImage";
-
+import { useUid } from "@hooks/UseUid";
 // Rank badges
 const silverMedal = require("@assets/rank/Silver III.png");
 const bronzeMedal = require("@assets/rank/Bronze III.png");
@@ -167,6 +167,7 @@ export default function Mypage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
+  const { uid, isLoading: uidLoading } = useUid();
 
   useEffect(() => {
     fetchMypageData();
@@ -177,8 +178,7 @@ export default function Mypage() {
       setIsLoading(true);
       setError(null);
 
-      //const uid = await AsyncStorage.getItem("uid");
-      const uid = 22;
+      //const uid = 22;
       
       if (!uid) {
         Alert.alert("오류", "사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.");

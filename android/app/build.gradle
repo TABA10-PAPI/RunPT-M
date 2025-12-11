@@ -99,6 +99,10 @@ android {
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
     signingConfigs {
+        debug {
+            // Debug keystore는 자동 생성되거나 기본값 사용
+            // 필요시 명시적으로 지정 가능
+        }
         release {
             if (project.hasProperty("MYAPP_UPLOAD_STORE_FILE")) {
                 storeFile file(MYAPP_UPLOAD_STORE_FILE)
@@ -115,7 +119,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds

@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import NaverLogin from "@react-native-seoul/naver-login";
 import apiClient from "@config/api";
 import { NAVER_CALLBACK_URL, initializeNaverLogin } from "./Oauth";
@@ -50,15 +51,23 @@ export default function NaverCallback() {
 
         const { code: responseCode, message, uid, fresh, new_user, default_nickname } = response.data;
         
-        // uid를 저장하지 않고, Join 화면에서만 사용하도록 함
-        // (Join 화면에서 저장하도록 변경하여 자동 리다이렉트 방지)
+        // OAuth provider 정보 저장 (토큰 갱신 시 사용)
+        await AsyncStorage.setItem("oauthProvider", "naver");
+        
+        // OAuth 토큰 저장 (백엔드가 토큰을 따로 발급하지 않으므로 OAuth 토큰 사용)
+        await AsyncStorage.setItem("accessToken", accessToken);
+        
+        // refreshToken도 저장 (네이버 SDK에서 제공하는 경우)
+        if (successResponse.refreshToken) {
+          await AsyncStorage.setItem("refreshToken", successResponse.refreshToken);
+        }
 
         // fresh 또는 new_user 필드 확인 (백엔드 응답에 따라 다를 수 있음)
         // fresh가 true이거나 new_user가 true이면 새 사용자
         const isNewUser = fresh === true || new_user === true;
 
         if (isNewUser) {
-          // uid는 Join 화면에서 저장하도록 하지 않고, Join 완료 후에만 저장
+          // 신규 사용자는 Join 화면으로 이동 (uid는 Join 완료 후 저장)
           navigation.navigate("Join", { uid, default_nickname });
         } else {
           // 기존 사용자는 uid를 저장하고 Home으로 이동

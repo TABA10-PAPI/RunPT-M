@@ -15,7 +15,7 @@ import Icon from "react-native-vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNavigationBar from "@components/BottomNavigationBar";
 import ScreenHeader from "@components/ScreenHeader";
-import { palette } from "@styles/globalStyles";
+import { palette, typography } from "@styles/globalStyles";
 import apiClient from "@config/api";
 import { getProfileImage } from "@utils/profileImage";
 import { useUid } from "@hooks/UseUid";
@@ -167,7 +167,7 @@ export default function Mypage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
-  const { uid, isLoading: uidLoading } = useUid();
+  const { uid, isLoading: uidLoading, clearUid } = useUid();
 
   useEffect(() => {
     if (uid && !uidLoading) {
@@ -317,6 +317,42 @@ export default function Mypage() {
 
   const goToCurrentWeek = () => {
     setCurrentWeekStart(getWeekStart(new Date()));
+  };
+
+  // 로그아웃 함수
+  const handleLogout = () => {
+    Alert.alert(
+      "로그아웃",
+      "정말 로그아웃 하시겠습니까?",
+      [
+        {
+          text: "취소",
+          style: "cancel",
+        },
+        {
+          text: "로그아웃",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // uid 제거
+              await clearUid();
+              // 토큰 및 OAuth provider 정보 제거
+              await AsyncStorage.removeItem("accessToken");
+              await AsyncStorage.removeItem("refreshToken");
+              await AsyncStorage.removeItem("oauthProvider");
+              // Welcome 화면으로 리다이렉트
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Welcome" }],
+              });
+            } catch (error) {
+              console.error("로그아웃 오류:", error);
+              Alert.alert("오류", "로그아웃 중 문제가 발생했습니다.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -528,6 +564,17 @@ export default function Mypage() {
               <Text style={styles.emptyText}>이 주에는 기록이 없습니다.</Text>
             </View>
           )}
+
+          {/* Logout Button */}
+          <View style={styles.logoutContainer}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.logoutButtonText}>로그아웃</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </View>
       <BottomNavigationBar navigation={navigation} currentRoute={route.name} />
@@ -777,5 +824,24 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: palette.graySubtitle,
+  },
+  logoutContainer: {
+    marginTop: 24,
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  logoutButton: {
+    backgroundColor: palette.gray,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FF4444",
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FF4444",
   },
 });

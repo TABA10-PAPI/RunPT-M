@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { Alert, ActivityIndicator, Text, View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { login } from "@react-native-seoul/kakao-login";
 import apiClient from "@config/api";
 import { KAKAO_CALLBACK_URL } from "./Oauth";
@@ -34,6 +35,17 @@ export default function KakaoCallback() {
 
         const { code, message, uid, fresh, nickname } = response.data;
         const default_nickname = nickname;
+
+        // OAuth provider 정보 저장 (토큰 갱신 시 사용)
+        await AsyncStorage.setItem("oauthProvider", "kakao");
+        
+        // OAuth 토큰 저장 (백엔드가 토큰을 따로 발급하지 않으므로 OAuth 토큰 사용)
+        await AsyncStorage.setItem("accessToken", accessToken);
+        
+        // refreshToken도 저장 (카카오 SDK에서 제공하는 경우)
+        if (kakaoToken.refreshToken) {
+          await AsyncStorage.setItem("refreshToken", kakaoToken.refreshToken);
+        }
 
         // uid를 저장 (useUid 훅 사용)
         if (uid) {

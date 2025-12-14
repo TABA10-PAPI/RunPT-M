@@ -169,6 +169,19 @@ export default function Mypage() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
   const { uid, isLoading: uidLoading, clearUid } = useUid();
 
+  // 사용자 없음 에러 처리 함수
+  const handleUserNotFound = async () => {
+    await clearUid();
+    await AsyncStorage.removeItem("accessToken");
+    await AsyncStorage.removeItem("refreshToken");
+    await AsyncStorage.removeItem("oauthProvider");
+    
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Welcome" }],
+    });
+  };
+
   useEffect(() => {
     if (uid && !uidLoading) {
       fetchMypageData();
@@ -198,7 +211,28 @@ export default function Mypage() {
         throw new Error(response.data.message || "데이터를 불러오는데 실패했습니다.");
       }
     } catch (err) {
-      setError(err.message || "데이터를 불러오는데 실패했습니다.");
+      const errorStatus = err?.response?.status;
+      const errorMessage = err?.response?.data?.message || err?.message || '';
+      const errorCode = err?.response?.data?.code || '';
+      
+      // 사용자가 없거나 인증 실패 시 (404, 401, 또는 user not exist 관련 에러)
+      if (
+        errorStatus === 404 || 
+        errorStatus === 401 ||
+        errorMessage.toLowerCase().includes('user not exist') ||
+        errorMessage.toLowerCase().includes('user not found') ||
+        errorMessage.toLowerCase().includes('사용자') ||
+        errorMessage.toLowerCase().includes('user') ||
+        errorCode === 'USER_NOT_FOUND' ||
+        errorCode === 'USER_DELETED' ||
+        errorCode === 'USER_NOT_EXIST'
+      ) {
+        // uid와 토큰 제거 후 Welcome으로 리다이렉트
+        await handleUserNotFound();
+        return;
+      }
+      
+      setError(errorMessage || "데이터를 불러오는데 실패했습니다.");
       Alert.alert("오류", "마이페이지 정보를 불러오는데 실패했습니다.");
     } finally {
       setIsLoading(false);

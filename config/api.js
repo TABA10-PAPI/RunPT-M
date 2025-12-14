@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { refreshAccessToken } from "@utils/tokenRefresh";
 
 // API Base URL - 환경 변수로 관리하거나 실제 서버 URL로 변경
-const API_BASE_URL = "http://52.78.76.223:8080";
+const API_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 // Axios 인스턴스 생성
 export const apiClient = axios.create({

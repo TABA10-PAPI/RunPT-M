@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import readRunningData from "@services/HealthConnectService";
 import apiClient from "@config/api";
 import { useUid } from "@hooks/UseUid";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Rank badges
 const rankBadges = {
@@ -63,7 +64,7 @@ const getTierBadge = (tier) => {
 export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { uid, isLoading: uidLoading } = useUid();
+  const { uid, isLoading: uidLoading, clearUid } = useUid();
 
   // API 응답 데이터 상태
   const [homeData, setHomeData] = useState(null);
@@ -98,7 +99,36 @@ export default function Home() {
         }
       } catch (err) {
         console.error('Home API Error:', err);
-        setError(err?.response?.data?.message || '서버 오류가 발생했습니다.');
+        const errorStatus = err?.response?.status;
+        const errorMessage = err?.response?.data?.message || '';
+        const errorCode = err?.response?.data?.code || '';
+        
+        // 사용자가 없거나 인증 실패 시 (404, 401, 또는 user not exist 관련 에러)
+        if (
+          errorStatus === 404 || 
+          errorStatus === 401 ||
+          errorMessage.toLowerCase().includes('user not exist') ||
+          errorMessage.toLowerCase().includes('user not found') ||
+          errorMessage.toLowerCase().includes('사용자') ||
+          errorMessage.toLowerCase().includes('user') ||
+          errorCode === 'USER_NOT_FOUND' ||
+          errorCode === 'USER_DELETED' ||
+          errorCode === 'USER_NOT_EXIST'
+        ) {
+          // uid와 토큰 제거 후 Welcome으로 리다이렉트
+          await clearUid();
+          await AsyncStorage.removeItem("accessToken");
+          await AsyncStorage.removeItem("refreshToken");
+          await AsyncStorage.removeItem("oauthProvider");
+          
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Welcome" }],
+          });
+          return;
+        }
+        
+        setError(errorMessage || '서버 오류가 발생했습니다.');
       } finally {
         setIsLoading(false);
       }

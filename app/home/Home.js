@@ -342,42 +342,44 @@ export default function Home() {
           )}
 
           {/* Running Battery and My Level Row */}
-          {(batteryLevel != null || highestTier) && (
-            <View style={styles.twoColumnContainer}>
-              {/* Running Battery Card */}
-              {batteryLevel != null && (
-                <View style={styles.batteryCard}>
-                  <Text style={styles.batteryCardTitle}>Running Battery</Text>
-                  <View style={styles.batteryContainer}>
-                    <View style={styles.batteryOutline}>
-                      <View
-                        style={[
-                          styles.batteryFill,
-                          { width: `${batteryLevel}%`, backgroundColor: batteryColor },
-                        ]}
-                      />
-                      <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
-                    </View>
-                    <View style={styles.batteryCap} />
-                  </View>
-                </View>
-              )}
-
-              {/* My Level Card */}
-              {highestTier && (
-                <View style={styles.levelCard}>
-                  <Text style={styles.levelCardTitle}>My Level</Text>
-                  <View style={styles.levelMedalContainer}>
-                    <Image
-                      source={getTierBadge(highestTier)}
-                      style={styles.levelMedal}
-                      resizeMode="contain"
+          <View style={styles.twoColumnContainer}>
+            {/* Running Battery Card */}
+            {batteryLevel != null && (
+              <View style={styles.batteryCard}>
+                <Text style={styles.batteryCardTitle}>Running Battery</Text>
+                <View style={styles.batteryContainer}>
+                  <View style={styles.batteryOutline}>
+                    <View
+                      style={[
+                        styles.batteryFill,
+                        { width: `${batteryLevel}%`, backgroundColor: batteryColor },
+                      ]}
                     />
+                    <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
                   </View>
+                  <View style={styles.batteryCap} />
+                </View>
+              </View>
+            )}
+
+            {/* My Level Card - 항상 표시 */}
+            <View style={styles.levelCard}>
+              <Text style={styles.levelCardTitle}>My Level</Text>
+              {highestTier ? (
+                <View style={styles.levelMedalContainer}>
+                  <Image
+                    source={getTierBadge(highestTier)}
+                    style={styles.levelMedal}
+                    resizeMode="contain"
+                  />
+                </View>
+              ) : (
+                <View style={styles.levelMedalContainer}>
+                  <Text style={styles.unrankedText}>Unranked</Text>
                 </View>
               )}
             </View>
-          )}
+          </View>
 
           {/* Condition Comment Card */}
           {(homeData?.battery?.feedback || homeData?.battery?.reason) && (
@@ -661,6 +663,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 12,
     gap: 12,
+    justifyContent: "flex-start",
   },
   levelCardTitle: {
     fontSize: 16,
@@ -668,13 +671,20 @@ const styles = StyleSheet.create({
     color: palette.white,
   },
   levelMedalContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    minHeight: 80,
   },
   levelMedal: {
     width: 60,
     height: 60,
+  },
+  unrankedText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: palette.graySubtitle,
+    textAlign: "center",
   },
   commentCard: {
     backgroundColor: palette.gray,

@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Text,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
@@ -142,11 +143,13 @@ export default function Community() {
         uid: Number(uid),
       });
 
+      // 새로운 응답 형식: response.data.body.communitys
       let communitys = null;
       
-      if (response.data?.body) {
+      if (response.data?.body?.communitys) {
         communitys = response.data.body.communitys;
       } else if (response.data?.communitys) {
+        // 이전 형식 호환성 유지
         communitys = response.data.communitys;
       }
 
@@ -188,11 +191,32 @@ export default function Community() {
     setIsNewPostVisible(false);
   };
 
-  // 검색 기능 (현재 미구현)
+  // 검색 기능
   const handleSearch = (text) => {
     setSearchText(text);
-    // TODO: 검색 기능은 백엔드 API가 준비되면 구현
   };
+
+  // 검색어로 게시물 필터링
+  const filteredPosts = React.useMemo(() => {
+    if (!searchText.trim()) {
+      return posts;
+    }
+
+    const searchLower = searchText.toLowerCase().trim();
+    
+    return posts.filter((post) => {
+      // 제목 검색
+      const titleMatch = post.location?.toLowerCase().includes(searchLower);
+      // 작성자 검색
+      const authorMatch = post.name?.toLowerCase().includes(searchLower);
+      // 내용 검색
+      const descriptionMatch = post.description?.toLowerCase().includes(searchLower);
+      // 장소 검색
+      const placeMatch = post.place?.toLowerCase().includes(searchLower);
+      
+      return titleMatch || authorMatch || descriptionMatch || placeMatch;
+    });
+  }, [posts, searchText]);
 
   const renderPost = ({ item }) => <PostCard post={item} />;
 
@@ -223,6 +247,15 @@ export default function Community() {
               value={searchText}
               onChangeText={handleSearch}
             />
+            {searchText.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => setSearchText("")}
+                activeOpacity={0.7}
+              >
+                <Icon name="x" size={15} color={palette.grayLight} />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.searchIconContainer}>
               <Icon name="search" size={15} color={palette.grayLight} />
             </TouchableOpacity>
@@ -235,13 +268,22 @@ export default function Community() {
           </View>
         ) : (
           <FlatList
-            data={posts}
+            data={filteredPosts}
             keyExtractor={(item, index) => item.id ? `${item.id}-${index}` : `post-${index}`}
             renderItem={renderPost}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 100 }}
             refreshing={isLoading}
             onRefresh={fetchPosts}
+            ListEmptyComponent={
+              searchText.trim() ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
+                    '{searchText}'에 대한 검색 결과가 없습니다.
+                  </Text>
+                </View>
+              ) : null
+            }
           />
         )}
       </View>
@@ -298,9 +340,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  clearButton: {
+    marginRight: 4,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 20,
+    height: 20,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 100,
+  },
+  emptyText: {
+    color: palette.grayLight,
+    fontSize: 14,
+    textAlign: "center",
   },
 });

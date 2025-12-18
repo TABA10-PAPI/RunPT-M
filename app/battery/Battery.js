@@ -65,8 +65,8 @@ export default function Battery() {
   // 배터리 레벨에 따른 색상 결정
   const batteryColor = useMemo(() => {
     if (batteryLevel == null) return palette.green;
-    if (batteryLevel <= 15) return palette.red;
-    if (batteryLevel <= 30) return palette.yellow;
+    if (batteryLevel <= 20) return palette.red;
+    if (batteryLevel <= 50) return palette.yellow;
     return palette.green;
   }, [batteryLevel]);
 
@@ -99,8 +99,17 @@ export default function Battery() {
                           { width: `${batteryLevel}%`, backgroundColor: batteryColor },
                         ]}
                       >
-                        <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
+                        {batteryLevel >= 30 && (
+                          <View style={styles.batteryLabelContainer}>
+                            <Text style={styles.batteryLabel}>{batteryLevel}%</Text>
+                          </View>
+                        )}
                       </View>
+                      {batteryLevel < 30 && (
+                        <View style={[styles.batteryLabelContainer, { left: `${batteryLevel}%`, right: 0 }]}>
+                          <Text style={styles.batteryLabelEmpty}>{batteryLevel}%</Text>
+                        </View>
+                      )}
                     </View>
                     <View style={styles.batteryCap} />
                   </View>
@@ -172,14 +181,24 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 18,
   },
-  batteryLabel: {
+  batteryLabelContainer: {
     position: "absolute",
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  batteryLabel: {
     fontSize: 30,
     fontWeight: "700",
     color: palette.black,
+  },
+  batteryLabelEmpty: {
+    fontSize: 30,
+    fontWeight: "700",
+    color: palette.white,
   },
   batteryCap: {
     width: 20,

@@ -117,7 +117,7 @@ export default function DetailPost() {
     } else {
       setIsAuthor(false);
     }
-  }, [uid, post?.apiData?.uid, post?.id]);
+  }, [uid, post?.apiData?.uid, post?.id, post]);
   
   const bottomNavBarHeight = 68 + insets.bottom;
 
@@ -291,6 +291,15 @@ export default function DetailPost() {
       transformedPost.comments = Number(apiPost.commentCount) || transformedComments.length;
       transformedPost.participateuser = apiPost.participateuser || 0;
       setPost(transformedPost);
+      
+      // 작성자 여부 다시 확인
+      if (uid && apiPost.uid) {
+        const authorUid = Number(apiPost.uid);
+        const currentUid = Number(uid);
+        setIsAuthor(authorUid === currentUid);
+      } else {
+        setIsAuthor(false);
+      }
     } catch (error) {
       Alert.alert("오류", "게시물을 불러오는데 실패했습니다.");
     } finally {
@@ -428,7 +437,7 @@ export default function DetailPost() {
                 </TouchableOpacity>
               }
               rightContent={
-                isAuthor ? (
+                isAuthor && uid ? (
                   <TouchableOpacity
                     style={styles.menuButton}
                     activeOpacity={0.7}

@@ -91,7 +91,7 @@ export default function Run() {
             title: rec.type || "러닝 추천",
             description: rec.reason || "",
             badge: category,
-            badgeColor: isAccent ? "#F5F5A0" : palette.white,
+            badgeColor: isAccent ? palette.white : palette.green,
             distance: distance > 0 ? `${distance}KM` : "0KM",
             time: distance > 0 ? `${estimatedTime}Min` : "0Min",
             pace: distance > 0 ? `${minutes}'${String(seconds).padStart(2, "0")}\"/KM` : "----/KM",

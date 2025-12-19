@@ -22,6 +22,34 @@ export default function Run() {
     }
   }, [uid, uidLoading]);
 
+  // 러닝 타입을 분류로 변환하는 함수
+  const getRunningCategory = (type) => {
+    if (!type) return "normal";
+    
+    const typeLower = type.toLowerCase();
+    
+    // easy 분류
+    if (
+      typeLower.includes("recovery run") ||
+      typeLower.includes("easy run")
+    ) {
+      return "easy";
+    }
+    
+    // hard 분류
+    if (
+      typeLower.includes("tempo run") ||
+      typeLower.includes("interval") ||
+      typeLower.includes("lsd") ||
+      typeLower.includes("long slow distance")
+    ) {
+      return "hard";
+    }
+    
+    // normal 분류 (Steady Run, Build-up Run 등)
+    return "normal";
+  };
+
   const fetchRecommendations = async () => {
     try {
       setIsLoading(true);
@@ -55,17 +83,19 @@ export default function Run() {
           const [minutes, seconds] = rec.target_pace.split(":").map(Number);
           const pacePerKm = minutes + seconds / 60; // 분/킬로미터로 변환
           const estimatedTime = Math.round(distance * pacePerKm); // 예상 시간 (분)
+          const category = getRunningCategory(rec.type);
+          const isAccent = index === 0;
 
           return {
             id: index + 1,
             title: rec.type || "러닝 추천",
             description: rec.reason || "",
-            badge: rec.type || "러닝 추천",
-            badgeColor: index === 0 ? "#F5F5A0" : "#A0A0A0",
+            badge: category,
+            badgeColor: isAccent ? "#F5F5A0" : palette.white,
             distance: distance > 0 ? `${distance}KM` : "0KM",
             time: distance > 0 ? `${estimatedTime}Min` : "0Min",
             pace: distance > 0 ? `${minutes}'${String(seconds).padStart(2, "0")}\"/KM` : "----/KM",
-            accent: index === 0,
+            accent: isAccent,
           };
         });
 

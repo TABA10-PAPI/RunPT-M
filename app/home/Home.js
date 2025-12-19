@@ -797,7 +797,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   dayDistance: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: "600",
     color: palette.black,
     marginBottom: 2,

@@ -21,27 +21,47 @@ const tierImageMap = {
   CHALLENGER: require("@assets/rank/Challenger.png"),
 };
 
-// 티어 이름을 이미지 소스로 변환
+// 티어 이름을 이미지 소스로 변환 (Home.js의 getTierBadge 로직과 동일)
 export const getTierImage = (tierName) => {
   if (!tierName) {
-    return tierImageMap.UNRANKED;
+    return tierImageMap["SILVER III"]; // Home.js와 동일한 기본값
   }
 
-  const normalizedTier = String(tierName).toUpperCase().trim();
+  const tierLower = String(tierName).toLowerCase().trim();
 
+  // 직접 매칭 시도 (정확한 티어 이름)
+  const normalizedTier = String(tierName).toUpperCase().trim();
   if (tierImageMap[normalizedTier]) {
     return tierImageMap[normalizedTier];
   }
 
-  const matchingKey = Object.keys(tierImageMap).find(
-    (key) => key === normalizedTier || key.replace(/\s+/g, "") === normalizedTier.replace(/\s+/g, "")
-  );
-
-  if (matchingKey) {
-    return tierImageMap[matchingKey];
+  // Home.js와 동일한 로직: 단순 티어 이름으로 매칭
+  if (tierLower === "diamond") {
+    return tierImageMap.DIAMOND;
+  }
+  if (tierLower === "master") {
+    return tierImageMap.MASTER;
+  }
+  if (tierLower === "challenger") {
+    return tierImageMap.CHALLENGER;
   }
 
-  return tierImageMap.UNRANKED;
+  // 부분 매칭: bronze, silver, gold, platinum
+  if (tierLower.includes("bronze")) {
+    return tierImageMap["BRONZE III"]; // Home.js와 동일: Bronze III 사용
+  }
+  if (tierLower.includes("silver")) {
+    return tierImageMap["SILVER III"]; // Home.js와 동일: Silver III 사용
+  }
+  if (tierLower.includes("gold")) {
+    return tierImageMap["GOLD III"]; // Home.js와 동일: Gold III 사용
+  }
+  if (tierLower.includes("platinum")) {
+    return tierImageMap["PLATINUM III"]; // Home.js와 동일: Platinum III 사용
+  }
+
+  // 기본값 (Home.js와 동일)
+  return tierImageMap["SILVER III"];
 };
 
 export default getTierImage;

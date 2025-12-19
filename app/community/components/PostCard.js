@@ -123,7 +123,7 @@ export default function PostCard({
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.nickname}>{post.name}</Text>
-            {post.tier && (
+            {post.tier && post.tier !== "UNRANKED" && (
               <Image
                 source={getTierImage(post.tier)}
                 style={styles.tierImage}

@@ -109,6 +109,41 @@ export default function Community() {
     const duration = calculateDuration(distance, pace);
     const commentCount = Number(apiPost.commentCount) || 0;
     const isParticipated = await checkUserParticipation(apiPost.id, uid);
+    
+    // 티어 값 처리: 객체인 경우 가장 높은 티어 찾기, 문자열인 경우 그대로 사용
+    let tierValue = null;
+    if (apiPost.tier) {
+      if (typeof apiPost.tier === "object" && apiPost.tier !== null) {
+        // 객체인 경우 가장 높은 티어 찾기 (Home.js와 동일한 로직)
+        const tierOrder = {
+          'BRONZE': 1,
+          'SILVER': 2,
+          'GOLD': 3,
+          'PLATINUM': 4,
+          'DIAMOND': 5,
+          'MASTER': 6,
+          'CHALLENGER': 7,
+        };
+        
+        const tiers = [
+          apiPost.tier.km3,
+          apiPost.tier.km5,
+          apiPost.tier.km10,
+          apiPost.tier.half,
+          apiPost.tier.full,
+        ].filter(Boolean);
+        
+        if (tiers.length > 0) {
+          tierValue = tiers.reduce((max, tier) => {
+            const maxOrder = tierOrder[max?.toUpperCase()] || 0;
+            const currentOrder = tierOrder[tier?.toUpperCase()] || 0;
+            return currentOrder > maxOrder ? tier : max;
+          });
+        }
+      } else if (typeof apiPost.tier === "string") {
+        tierValue = apiPost.tier;
+      }
+    }
 
     return {
       id: String(apiPost.id || ""),
@@ -122,7 +157,7 @@ export default function Community() {
       comments: commentCount,
       description: apiPost.shortinfo || "",
       timestamp: apiPost.createAt || "",
-      tier: apiPost.tier || "UNRANKED",
+      tier: tierValue,
       participateuser: apiPost.participateuser || 0,
       isParticipated: isParticipated,
       apiData: apiPost,

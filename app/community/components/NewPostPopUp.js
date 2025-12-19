@@ -143,8 +143,9 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
     >
       <KeyboardAvoidingView
         style={styles.modalContainer}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 100}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+        enabled={Platform.OS === "ios"}
       >
         <TouchableOpacity
           style={styles.overlay}
@@ -193,6 +194,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
                 placeholderTextColor={palette.grayPlaceholder}
                 value={title}
                 onChangeText={setTitle}
+                underlineColorAndroid="transparent"
+                autoFocus={false}
               />
             </View>
 
@@ -205,6 +208,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
                 placeholderTextColor={palette.grayPlaceholder}
                 value={place}
                 onChangeText={setPlace}
+                underlineColorAndroid="transparent"
+                autoFocus={false}
               />
             </View>
 
@@ -217,6 +222,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
                 placeholderTextColor={palette.grayPlaceholder}
                 value={startTime}
                 onChangeText={setStartTime}
+                underlineColorAndroid="transparent"
+                autoFocus={false}
               />
             </View>
 
@@ -231,6 +238,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
                 onChangeText={setContent}
                 multiline
                 textAlignVertical="top"
+                underlineColorAndroid="transparent"
+                autoFocus={false}
               />
             </View>
 
@@ -265,6 +274,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
                       value={distance}
                       onChangeText={setDistance}
                       keyboardType="numeric"
+                      underlineColorAndroid="transparent"
+                      autoFocus={false}
                     />
                     <Text style={styles.unit}>KM</Text>
                   </View>
@@ -281,6 +292,7 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
                       value={duration}
                       editable={false}
                       keyboardType="numeric"
+                      underlineColorAndroid="transparent"
                     />
                     <Text style={styles.unit}>분</Text>
                   </View>
@@ -298,6 +310,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
                         value={paceMin}
                         onChangeText={setPaceMin}
                         keyboardType="numeric"
+                        underlineColorAndroid="transparent"
+                        autoFocus={false}
                       />
                       <Text style={styles.paceSeparator}>'</Text>
                       <TextInput
@@ -307,6 +321,8 @@ export default function NewPostPopUp({ visible, onClose, onSubmit }) {
                         value={paceSec}
                         onChangeText={setPaceSec}
                         keyboardType="numeric"
+                        underlineColorAndroid="transparent"
+                        autoFocus={false}
                       />
                     </View>
                     <Text style={styles.paceUnit}>"/KM</Text>
@@ -404,6 +420,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontSize: 14,
     color: palette.white,
+    borderWidth: 0,
+    outlineStyle: "none",
     ...typography.regular,
   },
   textArea: {
@@ -414,6 +432,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: palette.white,
     minHeight: 120,
+    borderWidth: 0,
+    outlineStyle: "none",
     ...typography.regular,
   },
   runningInfoHeader: {
@@ -453,6 +473,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 14,
     color: palette.grayLight,
+    borderWidth: 0,
+    outlineStyle: "none",
     ...typography.regular,
   },
   readOnlyInput: {
@@ -480,6 +502,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: palette.grayLight,
     textAlign: "left",
+    borderWidth: 0,
+    outlineStyle: "none",
     ...typography.regular,
   },
   paceSeparator: {

@@ -4,6 +4,7 @@ import Icon from "react-native-vector-icons/Feather";
 import { palette, typography } from "@styles/globalStyles";
 import apiClient from "@config/api";
 import { getTierImage } from "@utils/tierImages";
+import { getProfileImage } from "@utils/profileImage";
 import { useUid } from "@hooks/UseUid";
 
 /**
@@ -94,21 +95,32 @@ export default function ParticipantsPopUp({ visible, onClose, communityId }) {
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
             >
-              {participants.map((participant, index) => (
-                <View key={participant.id ? `${participant.id}-${index}` : participant.uid ? `${participant.uid}-${index}` : `participant-${index}`} style={styles.participantItem}>
-                  <View style={styles.participantProfileCircle} />
-                  <View style={styles.participantInfo}>
-                    <Text style={styles.participantName}>{participant.nickname || "사용자"}</Text>
-                    {participant.tier && (
+              {participants.map((participant, index) => {
+                const participantName = participant.nickname || "사용자";
+                const participantUid = participant.uid || null;
+                
+                return (
+                  <View key={participant.id ? `${participant.id}-${index}` : participantUid ? `${participantUid}-${index}` : `participant-${index}`} style={styles.participantItem}>
+                    <View style={styles.participantProfileCircle}>
                       <Image
-                        source={getTierImage(participant.tier)}
-                        style={styles.tierImage}
-                        resizeMode="contain"
+                        source={getProfileImage(participantUid || participantName)}
+                        style={styles.participantProfileImage}
+                        resizeMode="cover"
                       />
-                    )}
+                    </View>
+                    <View style={styles.participantInfo}>
+                      <Text style={styles.participantName}>{participantName}</Text>
+                      {participant.tier && participant.tier !== "UNRANKED" && (
+                        <Image
+                          source={getTierImage(participant.tier)}
+                          style={styles.tierImage}
+                          resizeMode="contain"
+                        />
+                      )}
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </ScrollView>
           )}
         </View>
@@ -178,6 +190,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: palette.grayMedium,
     marginRight: 12,
+    overflow: "hidden",
+  },
+  participantProfileImage: {
+    width: "100%",
+    height: "100%",
   },
   participantInfo: {
     flex: 1,

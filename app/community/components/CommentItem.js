@@ -19,15 +19,15 @@ export default function CommentItem({ comment, onDelete, canDelete = false }) {
       <View style={styles.commentItem}>
         <View style={styles.commentProfileCircle}>
           <Image
-            source={getProfileImage(comment.uid || comment.name)}
+            source={getProfileImage(comment.apiData?.uid || comment.uid || comment.name)}
             style={styles.commentProfileImage}
             resizeMode="cover"
           />
         </View>
         <View style={styles.commentContent}>
           <View style={styles.commentHeader}>
-            <Text style={styles.commentName}>{comment.name}</Text>
-            {comment.tier && (
+            <Text style={styles.commentName}>{comment.apiData?.nickname || comment.name || "사용자"}</Text>
+            {comment.tier && comment.tier !== "UNRANKED" && (
               <Image
                 source={getTierImage(comment.tier)}
                 style={styles.tierImage}

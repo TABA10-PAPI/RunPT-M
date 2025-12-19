@@ -252,7 +252,8 @@ export default function DetailPost() {
       id: String(apiComment.id || ""),
       name: apiComment.nickname || "사용자",
       comment: apiComment.content || "",
-      tier: apiComment.tier || "UNRANKED",
+      tier: apiComment.tier || null,
+      uid: apiComment.uid || null,
       timestamp: apiComment.createAt
         ? new Date(apiComment.createAt)
             .toLocaleString("ko-KR", {
